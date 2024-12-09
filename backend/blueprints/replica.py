@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from utils.db_utils import check_replica_status, pause_replication, resume_replication
+from utils.db_utils import check_replica_status, manage_replication
 from config import DATABASE_CONFIG
 
 replica_blueprint = Blueprint("replica", __name__)
@@ -11,25 +11,33 @@ def get_replica_status():
     Fetch the replication statuses for the primary and delayed replicas.
     """
     statuses = {
-        "primary": check_replica_status(DATABASE_CONFIG["primary"]),
+        # "primary": check_replica_status(DATABASE_CONFIG["primary"]),
         "delayed": check_replica_status(DATABASE_CONFIG["delayed"]),
     }
     return jsonify(statuses)
 
 
-@replica_blueprint.route("/replica/pause", methods=["POST"])
-def pause_replica():
+@replica_blueprint.route("/replica/manage", methods=["POST"])
+def manage_replica():
     """
-    Pause replication for the delayed database.
+    Manage replication for the delayed database (pause or resume) via a single endpoint.
+    
+    Expected JSON Payload:
+    {
+        "action": "pause" or "resume"
+    }
     """
-    result = pause_replication(DATABASE_CONFIG["delayed"])
-    return jsonify(result)
-
-
-@replica_blueprint.route("/replica/resume", methods=["POST"])
-def resume_replica():
-    """
-    Resume replication for the delayed database.
-    """
-    result = resume_replication(DATABASE_CONFIG["delayed"])
-    return jsonify(result)
+    
+    print(9)
+    
+    try:
+        data = request.get_json()
+        action = data.get("action")
+        
+        if not action:
+            return jsonify({"status": "error", "error": "Missing 'action' parameter."}), 400
+        
+        result = manage_replication(DATABASE_CONFIG["delayed"], action)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
