@@ -15,15 +15,37 @@ def connect_to_db(config):
     )
 
 
+# def get_last_update_time(conn):
+#     """
+#     Get the delay time from the database for the delayed replica.
+#     """
+#     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+#         try:
+#             cursor.execute("SELECT now() - pg_last_xact_replay_timestamp() AS delay_time;")
+#             result = cursor.fetchone()
+#             if result and result['delay_time']:
+#                 return result['delay_time']
+#         except Exception as e:
+#             print("Error fetching delay time:", e)
+#         return None
+    
 def get_last_update_time(conn):
     """
     Get the delay time from the database for the delayed replica.
     """
     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
         try:
-            cursor.execute("SELECT now() - pg_last_xact_replay_timestamp() AS delay_time;")
+            # Query for delay time
+            cursor.execute("""
+                SELECT now() AS current_time, 
+                       pg_last_xact_replay_timestamp() AS replay_time,
+                       now() - pg_last_xact_replay_timestamp() AS delay_time
+                """)
             result = cursor.fetchone()
             if result and result['delay_time']:
+                print("Current Time:", result['current_time'])
+                print("Replay Time:", result['replay_time'])
+                print("Delay Time:", result['delay_time'])
                 return result['delay_time']
         except Exception as e:
             print("Error fetching delay time:", e)
