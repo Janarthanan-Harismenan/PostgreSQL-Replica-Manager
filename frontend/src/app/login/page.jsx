@@ -1,6 +1,8 @@
+"use client";
 import React from 'react'
 import {FaFacebookF, FaGoogle,FaLinkedinIn,FaRegEnvelope } from 'react-icons/fa'
 import {MdLockOutline} from 'react-icons/md'
+
 function LoginPage() {
   return (
     <div className='flex flex-col items-center justify-center min-h-screen py-2 bg-blue-100'>
@@ -9,7 +11,7 @@ function LoginPage() {
             <div className='w-3/5 p-5'>
             <div className='text-left font-bold'><span className='text-blue-300'>GTN Technologies</span>
                 </div>
-                <div className='py-10'><h2 className='text-3xl font-bold text-blue-200 mb-2'>Sign in to the Account</h2>
+                <div className='py-10'><h2 className='text-3xl font-bold text-blue-400 mb-2'>Sign in to the Account</h2>
                 <div className='border-2 w-10 border-blue-500 inline-block mb-2'></div>
                 <div className='flex justify-center my-2'>
                     <a href='#' className='border-2 border-gray-200 rounded-full p-3 mx-1'>
@@ -35,12 +37,22 @@ function LoginPage() {
                     <div className='flex w-64 mb-5 mt-2 justify-between'><label className='flex items-center text-xs'> <input type='checkbox' name='remeber'></input>Remember me</label>
                     <a href='#' className='text-xs'>Forgot Password</a></div>
                 </div>
-                <a href="#" className='border-2 border-blue-500 rounded-full px-12 py-2 inline-block font-semibold hover:bg-blue-500 hover:text-white' >Sign in</a>
+                <button 
+  className="border-2 border-blue-500 rounded-full px-12 py-2 font-semibold hover:bg-blue-500 hover:text-white"
+  onClick={() => console.log('Sign in clicked')}
+>
+  Sign in
+</button>
                 </div></div>
-            <div className='w-2/5 bg-blue-700 text-white rounded-tr-2xl rounded-br-2xl py-36 px-12' ><h2 className='test-3xl font-bold mb-2'>Hello, friend</h2>
+            <div className='w-2/5 bg-blue-700 text-white rounded-tr-2xl rounded-br-2xl py-36 px-12' ><h2 className='test-3xl font-bold mb-2'>New Here?</h2>
             <div className='border-2 w-10 border-white inline-block mb-2'></div>
-            <p className='mb-10'>Fill up with your details</p>
-            <a href="#" className='border-2 border-white rounded-full px-12 py-2 inline-block font-semibold hover:bg-white hover:text-black' >Signup</a></div>
+            <p className='mb-10'>Create an account to join us.</p>
+            <button 
+  className="border-2 border-white rounded-full px-12 py-2 font-semibold hover:bg-white hover:text-black"
+  onClick={() => console.log('Signup clicked')}
+>
+  Signup
+</button></div>
         </div>
     </main>
 </div>
