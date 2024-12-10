@@ -1,9 +1,8 @@
 from flask import Blueprint, jsonify, request
-from utils.db_utils import check_replica_status, manage_replication
+from utils.replica_manager import check_replica_status, manage_replication
 from config import DATABASE_CONFIG
 
 replica_blueprint = Blueprint("replica", __name__)
-
 
 @replica_blueprint.route("/replica-status", methods=["GET"])
 def get_replica_status():
