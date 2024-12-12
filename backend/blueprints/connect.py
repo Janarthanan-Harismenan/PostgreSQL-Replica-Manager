@@ -19,13 +19,20 @@ def connect():
     print("SSH connection to 172.20.224.175 successful. Elevating to root user...")
 
     # Elevate to root user with sudo
-    output_sudo, error_sudo = ssh_execute_command(ssh_client, "sudo -i", password=DATABASE_CONFIG['pg_password'])
+    output_sudo, error_sudo = ssh_execute_command(ssh_client, "sudo -i", password=DATABASE_CONFIG['ssh_password'])
 
     if error_sudo:
         print(f"Error during sudo elevation: {error_sudo} (connect.py)")
         return jsonify({"error": error_sudo})
 
     print("Elevated to root user. Switching to enterprisedb user...")
+    
+    # Switch to enterprisedb user with su
+    output_su, error_su = ssh_execute_command(ssh_client, DATABASE_CONFIG['ssh_password'])
+
+    if error_su:
+        print(f"Error during su to enterprisedb user: {error_su} (connect.py)")
+        return jsonify({"error": error_su})
 
     # Switch to enterprisedb user with su
     output_su, error_su = ssh_execute_command(ssh_client, "su - enterprisedb")

@@ -29,25 +29,45 @@ def ssh_connect(host, username, password):
     except Exception as e:
         print(f"Error during SSH connection: {str(e)}")
         return None, str(e)
-
+    
 def ssh_execute_command(ssh_client, command, password=None):
     try:
-        # If password is provided for sudo, use it in the sudo command
-        if password and command.startswith('sudo'):
-            command = f'{password} | {command}'
-
-        stdin, stdout, stderr = ssh_client.exec_command(command)
-
-        # Read the output and error
-        output = stdout.read().decode()
-        error = stderr.read().decode()
-
-        if output:
-            print(f"Command output: {output}")
-        if error:
-            print(f"Command error: {error}")
-
-        return output, error
+        # Open an interactive shell
+        channel = ssh_client.invoke_shell()
+       
+        # Wait for the shell to be ready
+        while not channel.recv_ready():
+            pass
+       
+        # Execute 'sudo -i'
+        channel.send('sudo -i\n')
+       
+        # Wait for the password prompt
+        while not channel.recv_ready():
+            pass
+        output = channel.recv(1024).decode()
+        print(f"Initial output: {output}")
+       
+        # Check for the password prompt and send the password
+        if "password" in output.lower() and password:
+            channel.send(f"{password}\n")
+       
+        # Wait for the shell to be ready again
+        while not channel.recv_ready():
+            pass
+        output = channel.recv(1024).decode()
+        print(f"Output after password: {output}")
+       
+        # Send the actual command
+        channel.send(f"{command}\n")
+       
+        # Wait for the command to execute and collect output
+        while not channel.recv_ready():
+            pass
+        output = channel.recv(4096).decode()
+       
+        print(f"Command output: {output}")
+        return output, None  # Return the command output
     except Exception as e:
         print(f"Error executing command: {str(e)}")
         return "", str(e)
