@@ -4,6 +4,7 @@ from blueprints.replica import replica_blueprint
 from blueprints.recovery import recover_blueprint # Ensure this is properly imported
 from blueprints.catcheck import catcheck_blueprint
 from blueprints.walfounder import wal_blueprint
+from blueprints.connect import connect_blueprint
 
 app = Flask(__name__)
 
@@ -11,6 +12,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
 # Register the blueprints
+app.register_blueprint(connect_blueprint, url_prefix="/api")
 app.register_blueprint(replica_blueprint, url_prefix="/api")
 app.register_blueprint(recover_blueprint, url_prefix="/api")
 app.register_blueprint(catcheck_blueprint, url_prefix="/api")
