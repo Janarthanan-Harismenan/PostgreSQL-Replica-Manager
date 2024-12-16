@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation"; // Import useRouter
 
 function ReplicaStatus() {
+  const router = useRouter(); // Initialize router
+
   // Sample data for database replicas
   const [replicas, setReplicas] = useState([
     { id: 1, name: "Database1", status: "Active", delayTime: "5s" },
@@ -26,11 +29,14 @@ function ReplicaStatus() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-300 flex items-center justify-center">
+    <div className="min-h-screen bg-blue-300 flex flex-col items-center justify-center">
       <div className="bg-white rounded-lg shadow-lg p-8 w-4/5">
         <h1 className="text-3xl font-bold text-gray-700 mb-6 bg-blue-400 text-center py-4 rounded">
           Replica Status
         </h1>
+
+        
+
         <table className="table-auto w-full border-collapse border border-gray-200">
           <thead>
             <tr className="bg-gray-100 text-center">
@@ -73,6 +79,13 @@ function ReplicaStatus() {
             ))}
           </tbody>
         </table>
+        {/* Back Button */}
+        <button
+          onClick={() => router.push("/")}
+          className="mb-6 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 font-semibold  mt-2 flex justify-center"
+        >
+          Back to Home
+        </button>
       </div>
     </div>
   );
