@@ -3,6 +3,7 @@ import shlex
 import subprocess
 from utils.db_utils import switch_to_root, connect_via_ssh
 import time
+<<<<<<< HEAD
 import re
 # def search_wal_files_for_keyword(ssh, keyword, number_of_files):
 #     """
@@ -21,6 +22,26 @@ import re
             
 #         )
 
+=======
+
+# def search_wal_files_for_keyword(ssh, keyword, number_of_files):
+#     """
+#     Searches WAL files for a specific keyword within a given time range on a remote server via SSH.
+#     """
+#     try:
+#         if not keyword.strip():
+#             raise ValueError("Keyword cannot be empty or whitespace.")
+
+#         escaped_keyword = shlex.quote(keyword.strip())
+#         base_path = "/usr/edb/as16/include/server/archive"
+#         find_command = (
+#             f'find {base_path} -type f '
+#             f'-newermt "{starting_time}" ! -newermt "{ending_time}" '
+#             f'-exec bash -c \'strings "{{}}" | grep -q {escaped_keyword} && echo "{{}}"\' \\;'
+            
+#         )
+
+>>>>>>> abc1743438d1fe7ad3b01f888d4a1fe37db4edb6
 #         print(f"Executing command on remote server: {find_command}")
 
 #         # Execute the command on the remote server
@@ -143,6 +164,7 @@ import re
 #         print(f"Error in search_wal_files_for_keyword: {str(e)}")
 #         raise
 
+<<<<<<< HEAD
 def remove_color_codes(text):
     """
     Removes ANSI color codes from a string.
@@ -157,6 +179,9 @@ def remove_color_codes(text):
     return re.sub(r'(\x1b\[[0-9;]*[mK]|\x1b)', '', text)
 
 def search_wal_files_and_content_for_keyword(shell, base_path, keyword, number_of_files, timeout=30):
+=======
+def search_wal_files_for_keyword(shell, base_path, keyword, number_of_files, timeout=30):
+>>>>>>> abc1743438d1fe7ad3b01f888d4a1fe37db4edb6
     """
     Searches the most recently modified WAL files for a specific keyword via an interactive shell.
 
@@ -168,7 +193,11 @@ def search_wal_files_and_content_for_keyword(shell, base_path, keyword, number_o
         timeout (int): Maximum time (in seconds) to wait for command completion.
 
     Returns:
+<<<<<<< HEAD
         list: A list of WAL file names containing the keyword.
+=======
+        list: A list of file paths containing the keyword.
+>>>>>>> abc1743438d1fe7ad3b01f888d4a1fe37db4edb6
     """
     try:
         if not keyword.strip():
@@ -206,6 +235,7 @@ def search_wal_files_and_content_for_keyword(shell, base_path, keyword, number_o
             time.sleep(0.5)  # Reduce CPU usage in the loop
 
         print("Processing output... (search_wal_files_for_keyword)")
+<<<<<<< HEAD
         # Extract only the file names from the output
         matched_files = [os.path.basename(line.strip()) for line in output.splitlines() if base_path in line]
 
@@ -243,12 +273,20 @@ def search_wal_files_and_content_for_keyword(shell, base_path, keyword, number_o
             print
             result.append([wal_file, matched_lines])
         return result
+=======
+        # Extract matched files from the output
+        matched_files = [line.strip() for line in output.splitlines() if base_path in line]
+
+        print(f"Matched files: {matched_files}")
+        return matched_files
+>>>>>>> abc1743438d1fe7ad3b01f888d4a1fe37db4edb6
 
     except Exception as e:
         print(f"Error in search_wal_files_for_keyword: {str(e)}")
         raise
 
 
+<<<<<<< HEAD
 
 # def run_full_process(host, ssh_user, ssh_password, keyword, number_of_files):
 #     """
@@ -289,12 +327,54 @@ def search_wal_files_and_content_for_keyword(shell, base_path, keyword, number_o
 #         print(f"Error in run_full_process: {str(e)}")
 #         return {"status": "error", "message": str(e)}
 
+=======
+# def run_full_process(host, ssh_user, ssh_password, keyword, number_of_files):
+#     """
+#     Orchestrates the full process of fetching WAL files and searching for a keyword.
+#     """
+#     try:
+#         print(f"Executing run_full_process in wal_handler.py with host={host}, "
+#               f"ssh_user={ssh_user}, keyword={keyword}")
+
+#         ssh = connect_via_ssh(host, ssh_user, ssh_password)
+#         print("SSH connection established.")
+#         shell = ssh.invoke_shell()
+
+#         switch_to_root(shell, ssh_password)
+#         print("Switched to root user.")
+
+#         # Search for the keyword
+#         matched_files = search_wal_files_for_keyword(shell, keyword, number_of_files)
+        
+#         ssh.close()
+#         print("SSH connection closed.")
+
+#         if matched_files:
+#             print(f"Files matched: {matched_files}")
+#             return {
+#                 "status": "success",
+#                 "matched_files": matched_files
+#             }
+#         else:
+#             print("No matches found.")
+#             return {
+#                 "status": "success",
+#                 "message": "No matches found.",
+#                 "matched_files": []
+#             }
+
+#     except Exception as e:
+#         print(f"Error in run_full_process: {str(e)}")
+#         return {"status": "error", "message": str(e)}
+
+>>>>>>> abc1743438d1fe7ad3b01f888d4a1fe37db4edb6
 def run_full_process(host, ssh_user, ssh_password, keyword, number_of_files):
     """
     Orchestrates the full process of fetching WAL files and searching for a keyword.
     """
     try:
         print(f"Executing run_full_process with host={host}, user={ssh_user}, keyword={keyword}")
+<<<<<<< HEAD
 
         ssh = connect_via_ssh(host, ssh_user, ssh_password)
         print("SSH connection established.")
@@ -309,6 +389,21 @@ def run_full_process(host, ssh_user, ssh_password, keyword, number_of_files):
 
         # Search for the keyword
         matched_files = search_wal_files_and_content_for_keyword(shell, base_path, keyword, number_of_files)
+=======
+
+        ssh = connect_via_ssh(host, ssh_user, ssh_password)
+        print("SSH connection established.")
+        shell = ssh.invoke_shell()
+
+        switch_to_root(shell, ssh_password)
+        print("Switched to root user.")
+
+        # Specify the WAL directory path
+        base_path = "/var/lib/edb/as15/data/pg_wal"
+
+        # Search for the keyword
+        matched_files = search_wal_files_for_keyword(shell, base_path, keyword, number_of_files)
+>>>>>>> abc1743438d1fe7ad3b01f888d4a1fe37db4edb6
 
         shell.close()
         ssh.close()
