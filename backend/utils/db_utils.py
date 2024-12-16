@@ -2,7 +2,6 @@ import psycopg2
 import time
 from psycopg2 import OperationalError
 from flask import Blueprint, jsonify, request
-from utils.ssh_utils import ssh_connect, ssh_execute_command
 import paramiko
 
 def connect_via_ssh(host, ssh_user, ssh_password):
