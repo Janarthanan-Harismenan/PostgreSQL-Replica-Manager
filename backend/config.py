@@ -9,3 +9,8 @@ DATABASE_CONFIG = {
     "database": "edb",  # PostgreSQL database name
     "pg_password": "password"  # PostgreSQL password
 }
+
+PATH_CONFIG = {
+    "base_path" : "/u01/edb/as15/data/pg_wal",
+    "base_path_archive" : "/u01/edb/as15/archivedir"
+}

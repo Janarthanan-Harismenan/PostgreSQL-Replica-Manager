@@ -25,26 +25,35 @@ def get_last_update_time(conn):
     
 def check_replica_status(config):
     """
-    Check the replication status of the database.
+    Check the replication status of the database and return the host address.
     """
     try:
         print("(replica_manager.py) Checking replica status.")
         conn = connect_to_db(config)
-        delay_time = None
+        
+        # Fetch the host address of the database
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT current_setting('server_version');")
+            result = cursor.fetchone()
+            pg_host = conn.info.host  # Extracting the host address
+        
         delay_time = get_last_update_time(conn)
         conn.close()
+        
         if check_replica_paused(config):
-            print("(replica_manager.py) Replica is paused.")
+            print(f"(replica_manager.py) Replica is paused at host {pg_host}.")
             return {
                 "status": "paused",
                 "delay": str(delay_time) if delay_time else "N/A",
+                "pg_host": pg_host,
                 "error": None
             }
         else:
-            print("(replica_manager.py) Replica is running.")
+            print(f"(replica_manager.py) Replica is running at host {pg_host}.")
             return {
                 "status": "running",
                 "delay": str(delay_time) if delay_time else "N/A",
+                "pg_host": pg_host,
                 "error": None
             }
     except Exception as e:
@@ -52,7 +61,8 @@ def check_replica_status(config):
         return {
             "status": "stopped",
             "delay": None,
-            "error": str(e)
+            "error": str(e),
+            "pg_host": None
         }
 
 def check_replica_paused(config):
