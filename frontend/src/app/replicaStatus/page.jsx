@@ -52,7 +52,12 @@ const ReplicaTable = ({ replicas, handlePauseResume }) => (
             {replica.status === "paused" || replica.status === "Paused" ? (
               <button
                 onClick={() =>
-                  handlePauseResume(replica.pg_host, replica.name, "resume")
+                  handlePauseResume(
+                    // replica.pg_host,
+                    // replica.name,
+                    replica.port,
+                    "resume"
+                  )
                 }
                 className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600 w-20 text-center"
               >
@@ -61,7 +66,12 @@ const ReplicaTable = ({ replicas, handlePauseResume }) => (
             ) : replica.status === "running" || replica.status === "Running" ? (
               <button
                 onClick={() =>
-                  handlePauseResume(replica.pg_host, replica.name, "pause")
+                  handlePauseResume(
+                    // replica.pg_host,
+                    // replica.name,
+                    replica.port,
+                    "pause"
+                  )
                 }
                 className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600 w-20 text-center"
               >
@@ -106,23 +116,30 @@ const ReplicaStatus = () => {
   }, []); // Empty dependency array ensures this runs only once
 
   // Handle Pause/Resume actions
-  const handlePauseResume = async (host, name, action) => {
+  const handlePauseResume = async (port, action) => {
     setLoading(true); // Show loading state during the operation
     try {
       const response = await axios.post(
         "http://localhost:5000/api/replica/manage",
         {
+          port,
           action,
-          name,
+          // name,
         }
       );
 
       // Update the status in the frontend
-      if (response.data.status === "paused" || response.data.status === "resumed") {
+      if (
+        response.data.status === "paused" ||
+        response.data.status === "resumed"
+      ) {
         setReplicas((prevReplicas) =>
           prevReplicas.map((replica) =>
-            replica.pg_host === host
-              ? { ...replica, status: action === "pause" ? "paused" : "running" }
+            replica.port === port
+              ? {
+                  ...replica,
+                  status: action === "pause" ? "paused" : "running",
+                }
               : replica
           )
         );
@@ -154,9 +171,14 @@ const ReplicaStatus = () => {
         {!loading && !error && (
           <>
             {replicas.length > 0 ? (
-              <ReplicaTable replicas={replicas} handlePauseResume={handlePauseResume} />
+              <ReplicaTable
+                replicas={replicas}
+                handlePauseResume={handlePauseResume}
+              />
             ) : (
-              <p className="text-center text-gray-500">No replica data available.</p>
+              <p className="text-center text-gray-500">
+                No replica data available.
+              </p>
             )}
           </>
         )}

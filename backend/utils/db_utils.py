@@ -37,6 +37,13 @@ def switch_to_enterprisedb(shell):
     print("Switching to 'enterprisedb' user... (pg_catcheck.py)")
     shell.send("su - enterprisedb\n")
     time.sleep(1)  # Wait for the 'enterprisedb' user prompt
+    
+def up_to_enterprisedb(ssh_host, ssh_user, ssh_password):
+    ssh = connect_via_ssh(ssh_host, ssh_user, ssh_password)
+    shell = ssh.invoke_shell()
+    switch_to_root(shell, ssh_password)
+    switch_to_enterprisedb(shell)
+    return shell
  
 def switch_to_server(shell, pg_host):
     print("Switching to 'server' (pg_catcheck.py)")
@@ -85,9 +92,7 @@ def list_databases_via_shell(shell,port):
  
     except Exception as e:
         print(f"Error while listing databases: {str(e)} (pg_catcheck.py)")
-        return {"status": "error", "message": str(e)}
- 
- 
+        return {"status": "error", "message": str(e)} 
  
 def connect(config):
     """
@@ -112,7 +117,7 @@ def connect(config):
         print(f"Error while connecting to the database: {e}")
         raise e
    
-def connect_to_db(DATABASE_CONFIG):
+def connect_to_db(shell, DATABASE_CONFIG):
     print("Starting SSH connection to 172.20.224.175 (connect.py)")
    
     data = DATABASE_CONFIG
@@ -127,12 +132,8 @@ def connect_to_db(DATABASE_CONFIG):
     user = data.get("user")
     database = data.get("database")
     pg_password = data.get("pg_password")
-   
-    ssh = connect_via_ssh(ssh_host, ssh_user, ssh_password)
-    shell = ssh.invoke_shell()
- 
-    switch_to_root(shell, ssh_password)
-    switch_to_enterprisedb(shell)
+    
+    # shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
     switch_to_server(shell, pg_host)
  
     print("SSH connection to 172.20.224.149 successful. Now connecting to the database...")
@@ -146,56 +147,6 @@ def connect_to_db(DATABASE_CONFIG):
    
     return conn
 
-# def connect_to_db(DATABASE_CONFIG, server):
-#     print("Starting SSH connection to 172.20.224.175 (connect.py)")
-   
-#     data = DATABASE_CONFIG
-#     print(f"Request payload: {data} (catcheck.py)")
- 
-#     # Extract parameters from the request
-#     ssh_host = data.get("ssh_host")
-#     ssh_user = data.get("ssh_user")
-#     ssh_password = data.get("ssh_password")
-   
-#     ssh = connect_via_ssh(ssh_host, ssh_user, ssh_password)
-#     shell = ssh.invoke_shell()
- 
-#     switch_to_root(shell, ssh_password)
-#     switch_to_enterprisedb(shell)
-#     switch_to_server(shell, server)
- 
-#     print("SSH connection to 172.20.224.149 successful. Now connecting to the database...")
- 
-#     # After SSH login, connect to the PostgreSQL database
-#     conn = connect(DATABASE_CONFIG)
- 
-#     if isinstance(conn, str) and conn.startswith("error"):
-#         print(f"Error during database connection: {conn} (connect.py)")
-#         return jsonify({"error": conn})
-   
-#     return conn
-
-# def connect_to_db(ssh_host, ssh_user, ssh_password, pg_host):
-#     print("Starting SSH connection to 172.20.224.175 (connect.py)")
-   
-#     ssh = connect_via_ssh(ssh_host, ssh_user, ssh_password)
-#     shell = ssh.invoke_shell()
- 
-#     switch_to_root(shell, ssh_password)
-#     switch_to_enterprisedb(shell)
-#     switch_to_server(shell, pg_host)
- 
-#     print("SSH connection to 172.20.224.149 successful. Now connecting to the database...")
- 
-#     # After SSH login, connect to the PostgreSQL database
-#     conn = connect(DATABASE_CONFIG)
- 
-#     if isinstance(conn, str) and conn.startswith("error"):
-#         print(f"Error during database connection: {conn} (connect.py)")
-#         return jsonify({"error": conn})
-   
-#     return conn
-   
 def close_connections(conn):
     """
     Close the database connection safely.

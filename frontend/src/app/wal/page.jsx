@@ -12,13 +12,16 @@ function WALChecker() {
   const [selectedFileDetails, setSelectedFileDetails] = useState(null);
   const [paths, setPaths] = useState([]); // For storing paths from PATH_CONFIG
   const [selectedPath, setSelectedPath] = useState(""); // For storing the selected path
+  const [hasSearched, setHasSearched] = useState(false); // To track if search has been initiated
   const router = useRouter();
 
   // Fetch paths from the backend
   useEffect(() => {
     const fetchPaths = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/get-path-config");
+        const response = await fetch(
+          "http://localhost:5000/api/get-path-config"
+        );
         if (response.ok) {
           const data = await response.json();
           setPaths(data.paths || []);
@@ -44,6 +47,7 @@ function WALChecker() {
     setResultFiles([]);
     setErrorMessage("");
     setSelectedFileDetails(null);
+    setHasSearched(true); // Mark that the user has initiated a search
 
     try {
       const response = await fetch("http://localhost:5000/api/run-wal-check", {
@@ -87,11 +91,16 @@ function WALChecker() {
   return (
     <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-4xl">
-        <h1 className="text-4xl font-bold text-blue-600 text-center mb-6">WAL Checker</h1>
+        <h1 className="text-4xl font-bold text-blue-600 text-center mb-6">
+          WAL Checker
+        </h1>
 
         {/* Select Path */}
         <div>
-          <label htmlFor="pathSelector" className="block text-gray-700 font-semibold mb-2">
+          <label
+            htmlFor="pathSelector"
+            className="block text-gray-700 font-semibold mb-2"
+          >
             Select Path:
           </label>
           <select
@@ -111,7 +120,10 @@ function WALChecker() {
         {/* Search Inputs */}
         <div className="space-y-6 mt-4">
           <div>
-            <label htmlFor="searchWord" className="block text-gray-700 font-semibold mb-2">
+            <label
+              htmlFor="searchWord"
+              className="block text-gray-700 font-semibold mb-2"
+            >
               Word to Search:
             </label>
             <input
@@ -125,7 +137,10 @@ function WALChecker() {
           </div>
 
           <div>
-            <label htmlFor="numFiles" className="block text-gray-700 font-semibold mb-2">
+            <label
+              htmlFor="numFiles"
+              className="block text-gray-700 font-semibold mb-2"
+            >
               Number of Files to Search:
             </label>
             <input
@@ -149,12 +164,18 @@ function WALChecker() {
         </div>
 
         {/* Error Message */}
-        {errorMessage && <p className="text-red-500 font-semibold mt-4 text-center">{errorMessage}</p>}
+        {errorMessage && (
+          <p className="text-red-500 font-semibold mt-4 text-center">
+            {errorMessage}
+          </p>
+        )}
 
         {/* Results Section */}
         {!isSearching && resultFiles.length > 0 && (
           <div className="mt-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Files Contain "{searchWord}" :</h2>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              Files Contain "{searchWord}" :
+            </h2>
             <ul className="space-y-2">
               {resultFiles.map((file, index) => (
                 <li
@@ -170,16 +191,19 @@ function WALChecker() {
         )}
 
         {/* No Results Message */}
-        {!isSearching && !errorMessage && resultFiles.length === 0 && searchWord && (
+        {!isSearching && hasSearched && resultFiles.length === 0 && (
           <p className="text-red-500 font-semibold mt-4 text-center">
             No files with content found for the word "{searchWord}".
           </p>
         )}
-        
+
         {selectedFileDetails && (
           <div className="mt-6">
             <h3 className="text-xl font-semibold mb-2 text-gray-700">
-              File: <span className="text-blue-600">{selectedFileDetails.wal_file}</span>
+              File:{" "}
+              <span className="text-blue-600">
+                {selectedFileDetails.wal_file}
+              </span>
             </h3>
             <div
               className="border border-gray-300 rounded-lg bg-gray-50 p-4 overflow-auto"
@@ -188,7 +212,9 @@ function WALChecker() {
               {selectedFileDetails.content?.length > 0 && (
                 <>
                   {/* Display Errors */}
-                  {selectedFileDetails.content.some((line) => line.includes("error")) && (
+                  {selectedFileDetails.content.some((line) =>
+                    line.includes("error")
+                  ) && (
                     <>
                       <h4 className="font-semibold text-red-600">Error:</h4>
                       <pre className="whitespace-pre-wrap text-sm font-mono overflow-x-auto">
@@ -202,7 +228,7 @@ function WALChecker() {
 
                   {/* Display Non-Error Lines */}
                   <h4 className="font-semibold text-gray-600 mt-4">
-                    Lines Without Errors:
+                    Lines With "{searchWord}":
                   </h4>
                   <pre className="whitespace-pre-wrap text-sm font-mono overflow-x-auto">
                     {selectedFileDetails.content
@@ -213,7 +239,9 @@ function WALChecker() {
                 </>
               )}
 
-              <h4 className="font-semibold text-gray-600 mt-4">Database Info:</h4>
+              <h4 className="font-semibold text-gray-600 mt-4">
+                Database Info:
+              </h4>
               <pre className="whitespace-pre-wrap text-sm font-mono overflow-x-auto">
                 {selectedFileDetails.db_info?.database_name
                   ? `Name: ${selectedFileDetails.db_info.database_name}\nDir: ${selectedFileDetails.db_info.database_dir}`

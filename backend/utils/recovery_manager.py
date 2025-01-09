@@ -54,6 +54,15 @@ def edit_postgresql_conf(shell, base_path, recovery_time, log_file_path=None):
     if log_file_path:
         log_shell_output(shell, log_file_path)
     time.sleep(2)
+    
+    command = (
+        f"sed -i \"s/^#\\?port =.*/port = 5444/\" "
+        f"{base_path}/postgresql.conf"
+    )
+    shell.send(command + '\n')
+    if log_file_path:
+        log_shell_output(shell, log_file_path)
+    time.sleep(2) 
 
 def edit_postgresql_conf_for_wal(shell, base_path, wal_file_name, log_file_path=None):
     """
@@ -69,6 +78,15 @@ def edit_postgresql_conf_for_wal(shell, base_path, wal_file_name, log_file_path=
     if log_file_path:
         log_shell_output(shell, log_file_path)
     time.sleep(2)
+    
+    command = (
+        f"sed -i \"s/^#\\?port =.*/port = 5444/\" "
+        f"{base_path}/postgresql.conf"
+    )
+    shell.send(command + '\n')
+    if log_file_path:
+        log_shell_output(shell, log_file_path)
+    time.sleep(2)  
 
 def save_postgresql_conf_to_file(shell, base_path, local_file_path, log_file_path=None):
     """
@@ -135,28 +153,29 @@ def restart_postgresql_service(shell, log_file_path=None):
 #         print(f"Error in get_the_path: {str(e)}")
 #         raise
 
-def get_the_path(recovery_database, recovery_host):
+def get_the_path(recovery_port):
     try:
         # Iterate through all database configurations in SERVER_CONFIG
         for db_config in SERVER_CONFIG.values():
+            print(db_config["port"])
             # Check if the recovery_host matches the pg_host of the current db_config
-            if db_config["pg_host"] == recovery_host:
+            if db_config["port"] == recovery_port:
+                print(db_config["port"])
                 # If the recovery_database exists as a key in the CONFIG_FILE_PATH_CONFIG
-                if recovery_database in db_config.get("CONFIG_FILE_PATH_CONFIG", {}):
-                    return db_config["CONFIG_FILE_PATH_CONFIG"][recovery_database]
+                return db_config.get("base_path")
         
         # If no matching recovery_database is found in any config for the recovery_host, raise an error
-        raise ValueError(f"No path found for recovery database: {recovery_database} on host: {recovery_host}")
+        raise ValueError(f"No path found for recovery port: {recovery_port}")
 
     except Exception as e:
         print(f"Error in get_the_path: {str(e)}")
         raise
 
-def run_full_process_with_recovery_time(recovery_time, ssh_host, recovery_host, ssh_user, ssh_password, recovery_database):
+def run_full_process_with_recovery_time(recovery_time, ssh_host, recovery_host, ssh_user, ssh_password,recovery_port):
     try:
         print(f"Executing run_full_process_with_recovery_time with host={ssh_host}, user={ssh_user}, recovery_time={recovery_time}")
 
-        base_path = get_the_path(recovery_database, recovery_host)
+        base_path = get_the_path(recovery_port)
         # base_path = "/u01/edb/as15/data"
         # f"sed -i \"s/^\\(recovery_target_time =.*\\)/#\\1/\" /u01/edb/as15/data/postgresql.conf"
 
@@ -198,7 +217,7 @@ def run_full_process_with_recovery_time(recovery_time, ssh_host, recovery_host, 
         print(f"Error in run_full_process_with_recovery_time: {str(e)}")
         return {"status": "error", "message": str(e)}
 
-def run_full_process_with_wal_file(wal_file_name, ssh_host, recovery_host, ssh_user, ssh_password, recovery_database):
+def run_full_process_with_wal_file(wal_file_name, ssh_host, recovery_host, ssh_user, ssh_password, recovery_port):
     try:
         print(f"Executing run_full_process_with_wal_file with host={ssh_host}, user={ssh_user}, wal_file_name={wal_file_name}")
 
@@ -207,7 +226,7 @@ def run_full_process_with_wal_file(wal_file_name, ssh_host, recovery_host, ssh_u
         print("SSH connection established.")
         shell = ssh.invoke_shell()
         
-        base_path = get_the_path(recovery_database, recovery_host)
+        base_path = get_the_path(recovery_port)
 
         # Log file path
         # log_file_path = os.path.join(PATH_CONFIG["blueprints_directory"], "shell_commands.log")
@@ -241,7 +260,7 @@ def run_full_process_with_wal_file(wal_file_name, ssh_host, recovery_host, ssh_u
         print(f"Error in run_full_process_with_wal_file: {str(e)}")
         return {"status": "error", "message": str(e)}
     
-def switch_primary_database(ssh_host, ssh_user, ssh_password, recovery_database, recovery_host):
+def switch_primary_database(ssh_host, ssh_user, ssh_password, recovery_host, recovery_port):
     try:
         # print(f"Executing run_full_process_with_wal_file with host={ssh_host}, user={ssh_user}, wal_file_name={wal_file_name}")
 
@@ -250,7 +269,7 @@ def switch_primary_database(ssh_host, ssh_user, ssh_password, recovery_database,
         print("SSH connection established.")
         shell = ssh.invoke_shell()
         
-        base_path = get_the_path(recovery_database, recovery_host)
+        base_path = get_the_path(recovery_port)
 
         # Log file path
         # log_file_path = os.path.join(PATH_CONFIG["blueprints_directory"], "shell_commands.log")
@@ -265,7 +284,7 @@ def switch_primary_database(ssh_host, ssh_user, ssh_password, recovery_database,
         switch_to_server(shell, recovery_host)
         
         # Run the 'pg_ctl promote' command to promote the secondary to primary
-        promote_command = f"/usr/edb/as15/bin/pg_ctl promote {base_path}"
+        promote_command = f"/usr/edb/as15/bin/pg_ctl promote -D {base_path}"
         shell.send(f"{promote_command}\n")
         time.sleep(5)
         

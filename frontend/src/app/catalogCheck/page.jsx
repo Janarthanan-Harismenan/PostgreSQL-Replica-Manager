@@ -7,7 +7,7 @@ function CatalogCheck() {
   const [pgHost, setPgHost] = useState("");
   const [port, setPort] = useState("5432"); // Default port
   const [databases, setDatabases] = useState([]);
-  const [selectedDatabase, setSelectedDatabase] = useState("");
+  // const [selectedDatabase, setSelectedDatabase] = useState("");
   const [reportGenerated, setReportGenerated] = useState(false);
   const [reportUrl, setReportUrl] = useState("");
   const [reportSummary, setReportSummary] = useState({
@@ -16,48 +16,53 @@ function CatalogCheck() {
     warnings: 0,
   });
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isFetchingDatabases, setIsFetchingDatabases] = useState(false);
+  // const [isFetchingDatabases, setIsFetchingDatabases] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
 
-  const fetchDatabases = async () => {
-    if (!pgHost || !port) {
-      setErrorMessage("Please enter the PostgreSQL host and port.");
-      return;
-    }
+  // const fetchDatabases = async () => {
+  //   if (!pgHost || !port) {
+  //     setErrorMessage("Please enter the PostgreSQL host and port.");
+  //     return;
+  //   }
 
-    setIsFetchingDatabases(true);
-    setErrorMessage("");
-    try {
-      const response = await fetch("http://localhost:5000/api/get-databases", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ pg_host: pgHost, port: port }),
-      });
+  //   setIsFetchingDatabases(true);
+  //   setErrorMessage("");
+  //   try {
+  //     const response = await fetch("http://localhost:5000/api/get-databases", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ pg_host: pgHost, port: port }),
+  //     });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.status === "success") {
-          setDatabases(result.databases || []);
-        } else {
-          setErrorMessage(`Error fetching databases: ${result.message}`);
-        }
-      } else {
-        const error = await response.json();
-        setErrorMessage(`Error: ${error.message}`);
-      }
-    } catch (error) {
-      setErrorMessage(`Unexpected error: ${error.message}`);
-    } finally {
-      setIsFetchingDatabases(false);
-    }
-  };
+  //     if (response.ok) {
+  //       const result = await response.json();
+  //       if (result.status === "success") {
+  //         setDatabases(result.databases || []);
+  //       } else {
+  //         setErrorMessage(`Error fetching databases: ${result.message}`);
+  //       }
+  //     } else {
+  //       const error = await response.json();
+  //       setErrorMessage(`Error: ${error.message}`);
+  //     }
+  //   } catch (error) {
+  //     setErrorMessage(`Unexpected error: ${error.message}`);
+  //   } finally {
+  //     setIsFetchingDatabases(false);
+  //   }
+  // };
 
   const handleGenerateReport = async () => {
-    if (!selectedDatabase) {
-      setErrorMessage("Please select a database.");
+    // if (!selectedDatabase) {
+    //   setErrorMessage("Please select a database.");
+    //   return;
+    // }
+
+    if (!pgHost || !port) {
+      setErrorMessage("Please enter the PostgreSQL host and port.");
       return;
     }
 
@@ -74,7 +79,7 @@ function CatalogCheck() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            database: selectedDatabase,
+            // database: selectedDatabase,
             pg_host: pgHost,
             port: port,
           }),
@@ -166,16 +171,16 @@ function CatalogCheck() {
         </div>
 
         {/* Fetch Databases Button */}
-        <button
+        {/* <button
           onClick={fetchDatabases}
           className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition duration-300"
           disabled={isFetchingDatabases}
         >
           {isFetchingDatabases ? "Fetching Databases..." : "Fetch Databases"}
-        </button>
+        </button> */}
 
         {/* Select Database */}
-        {databases.length > 0 && (
+        {/* {databases.length > 0 && (
           <div className="mt-6">
             <label
               htmlFor="database"
@@ -197,18 +202,18 @@ function CatalogCheck() {
               ))}
             </select>
           </div>
-        )}
+        )} */}
 
         {/* Generate Report Button */}
-        {databases.length > 0 && (
-          <button
-            onClick={handleGenerateReport}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 mt-6"
-            disabled={isGenerating}
-          >
-            {isGenerating ? "Generating Report..." : "Generate Report"}
-          </button>
-        )}
+        {/* {databases.length > 0 && ( */}
+        <button
+          onClick={handleGenerateReport}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 mt-6"
+          disabled={isGenerating}
+        >
+          {isGenerating ? "Generating Report..." : "Generate Report"}
+        </button>
+        {/* )} */}
 
         {/* Report Summary */}
         {reportGenerated && (

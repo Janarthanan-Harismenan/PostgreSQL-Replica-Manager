@@ -20,7 +20,8 @@ def start_recovery_process():
     recovery_method = data.get("recovery_method")
     wal_file_name = data.get("wal_file_name")  # WAL file name (if recovery method is WAL)
     recovery_time = data.get("recovery_time")  # Recovery time (if method is Log)
-    recovery_database = data.get("recovery_database")
+    # recovery_database = data.get("recovery_database")
+    recovery_port = data.get("recovery_port")
 
     if not all([recovery_host, recovery_method]):
         return jsonify({"status": "error", "message": "Missing required parameters: 'recovery_host' and/or 'recovery_method'"}), 400
@@ -53,7 +54,8 @@ def start_recovery_process():
                 recovery_host =recovery_host,
                 ssh_user=ssh_user,
                 ssh_password=ssh_password,
-                recovery_database = recovery_database
+                # recovery_database = recovery_database,
+                recovery_port = recovery_port
             )
             
         elif recovery_method == "Log":
@@ -66,7 +68,8 @@ def start_recovery_process():
                 recovery_host = recovery_host,
                 ssh_user=ssh_user,
                 ssh_password=ssh_password,
-                recovery_database = recovery_database
+                # recovery_database = recovery_database,
+                recovery_port = recovery_port
             )
         else:
             return jsonify({"status": "error", "message": "Invalid recovery method specified."}), 400
@@ -123,13 +126,14 @@ def switch_primary():
     ssh_password = DATABASE_CONFIG.get("ssh_password")
     
     recovery_host = data.get("recovery_host")
-    recovery_database = data.get("recovery_database")
+    # recovery_database = data.get("recovery_database")
+    recovery_port = data.get("recovery_port")
     
-    if not all([recovery_host, recovery_database]):
+    if not all([recovery_host]):
         return jsonify({"status": "error", "message": "Missing required parameters: 'recovery_host' and/or 'recovery_method'"}), 400
 
     try:
-        result = switch_primary_database(ssh_host, ssh_user, ssh_password, recovery_database, recovery_host)
+        result = switch_primary_database(ssh_host, ssh_user, ssh_password, recovery_host, recovery_port)
         return jsonify({"status": "success", "message": result}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": f"An error occurred while switching primary: {str(e)}"}), 500

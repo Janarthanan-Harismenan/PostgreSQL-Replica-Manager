@@ -37,7 +37,7 @@ def run_pg_catcheck(shell, pg_host, port, user, database, pg_password, timeout=3
     """
     Runs the `pg_catcheck` command and captures its output, cleaning up irrelevant parts.
     """
-    command = f"/usr/edb/as15/bin/pg_catcheck -h {pg_host} -p {port} -U {user} {database} --verbose | sed '1,/verbose/d'\n"
+    command = f"/usr/edb/as15/bin/pg_catcheck -h {pg_host} -p {port} -U {user} edb --verbose | sed '1,/verbose/d'\n"
     print(f"Executing command: {command.strip()} (pg_catcheck.py)")
     shell.send(command)
     time.sleep(1)  # Wait for the command prompt

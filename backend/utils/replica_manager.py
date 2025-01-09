@@ -1,4 +1,5 @@
-from utils.db_utils import connect_to_db
+from config import DATABASE_CONFIG
+from utils.db_utils import connect_to_db, up_to_enterprisedb
 from psycopg2.extras import RealDictCursor
 
 def get_last_update_time(conn):
@@ -23,29 +24,31 @@ def get_last_update_time(conn):
             print(f"(replica_manager.py) Error fetching delay time: {e}")
         return None
     
-def check_replica_status(config):
+def check_replica_status(shell, config):
     """
     Check the replication status of the database and return the host address.
     """
     try:
-        print("(replica_manager.py) Checking replica status.")
-        conn = connect_to_db(config)
+        conn = connect_to_db(shell, config)
         
         # Fetch the host address of the database
         with conn.cursor() as cursor:
             cursor.execute("SELECT current_setting('server_version');")
             result = cursor.fetchone()
             pg_host = conn.info.host  # Extracting the host address
+            port = conn.info.port
+            # print(f"conn : {conn}")
         
         delay_time = get_last_update_time(conn)
         conn.close()
         
-        if check_replica_paused(config):
+        if check_replica_paused(shell, config):
             print(f"(replica_manager.py) Replica is paused at host {pg_host}.")
             return {
                 "status": "paused",
                 "delay": str(delay_time) if delay_time else "N/A",
                 "pg_host": pg_host,
+                "port" : port,
                 "error": None
             }
         else:
@@ -54,6 +57,7 @@ def check_replica_status(config):
                 "status": "running",
                 "delay": str(delay_time) if delay_time else "N/A",
                 "pg_host": pg_host,
+                "port" : port,
                 "error": None
             }
     except Exception as e:
@@ -65,13 +69,13 @@ def check_replica_status(config):
             "pg_host": None
         }
 
-def check_replica_paused(config):
+def check_replica_paused(shell, config):
     """
     Check if the replication for the delayed database is paused.
     """
     try:
         print("(replica_manager.py) Checking if replica is paused.")
-        conn = connect_to_db(config)
+        conn = connect_to_db(shell, config)
         with conn.cursor() as cursor:
             cursor.execute("SELECT pg_is_wal_replay_paused();")
             result = cursor.fetchone()
@@ -85,7 +89,7 @@ def check_replica_paused(config):
         if conn:
             conn.close()
 
-def manage_replication(config, action):
+def manage_replication(shell, config, action):
     """
     Manage replication for the delayed database (pause or resume).
     
@@ -102,7 +106,7 @@ def manage_replication(config, action):
             print("(replica_manager.py) Invalid action received.")
             return {"status": "error", "error": "Invalid action. Use 'pause' or 'resume'."}
         
-        is_paused = check_replica_paused(config)
+        is_paused = check_replica_paused(shell, config)
         if action == "pause" and is_paused:
             print("(replica_manager.py) Replica is already paused.")
             return {"status": "already paused"}
@@ -110,7 +114,7 @@ def manage_replication(config, action):
             print("(replica_manager.py) Replica is already resumed.")
             return {"status": "already resumed"}
         
-        conn = connect_to_db(config)
+        conn = connect_to_db(shell, config)
         with conn.cursor() as cursor:
             if action == "pause":
                 print("(replica_manager.py) Pausing WAL replay.")
@@ -121,10 +125,10 @@ def manage_replication(config, action):
             conn.commit()
         conn.close()
         
-        if action == "pause" and check_replica_paused(config):
+        if action == "pause" and check_replica_paused(shell, config):
             print("(replica_manager.py) WAL replay successfully paused.")
             return {"status": "paused"}
-        if action == "resume" and not check_replica_paused(config):
+        if action == "resume" and not check_replica_paused(shell, config):
             print("(replica_manager.py) WAL replay successfully resumed.")
             return {"status": "resumed"}
         print(f"(replica_manager.py) Failed to {action} replication.")

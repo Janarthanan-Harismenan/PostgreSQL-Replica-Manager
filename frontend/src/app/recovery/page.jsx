@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ReplicaStatus from "../ReplicaStatus/page";
+import "react-datepicker/dist/react-datepicker.css";
+import ReactDatePicker from "react-datepicker";
 
 function Recovery() {
   const [recoveryMethod, setRecoveryMethod] = useState("");
@@ -14,12 +16,12 @@ function Recovery() {
   const [recoveryMessage, setRecoveryMessage] = useState("");
   const [pgHosts, setPgHosts] = useState([]);
   const [responsePayload, setResponsePayload] = useState(null);
-  const [isFetchingDatabases, setIsFetchingDatabases] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [databases, setDatabases] = useState([]);
-  const [selectedDatabase, setSelectedDatabase] = useState("");
-  const [primaryDatabase, setPrimaryDatabase] = useState(null); // New state for primary database
-  const [secondaryDatabase, setSecondaryDatabase] = useState(null); // New state for secondary database
+  // const [isFetchingDatabases, setIsFetchingDatabases] = useState(false);
+  // const [errorMessage, setErrorMessage] = useState("");
+  // const [databases, setDatabases] = useState([]);
+  // const [selectedDatabase, setSelectedDatabase] = useState("");
+  // const [primaryDatabase, setPrimaryDatabase] = useState(null); // New state for primary database
+  // const [secondaryDatabase, setSecondaryDatabase] = useState(null); // New state for secondary database
 
   const router = useRouter();
 
@@ -50,15 +52,79 @@ function Recovery() {
     fetchPgHostsAndPorts();
   }, []);
 
+  // const handleStartRecovery = async () => {
+  //   if (!selectedHost || !selectedPort || !recoveryMethod) {
+  //     alert("Please ensure all required fields are selected.");
+  //     return;
+  //   }
+
+  //   if (recoveryMethod === "WAL" && !walFileName.trim()) {
+  //     alert("Please enter a valid WAL file name.");
+  //     return;
+  //   }
+
+  //   if (recoveryMethod === "Log" && !recoveryTime.trim()) {
+  //     alert(
+  //       "Please enter a valid recovery time in the format: Thu Jan  2 04:31:31 UTC 2025."
+  //     );
+  //     return;
+  //   }
+
+  //   const payload = {
+  //     recovery_host: selectedHost,
+  //     recovery_method: recoveryMethod,
+  //     wal_file_name: recoveryMethod === "WAL" ? walFileName : null,
+  //     recovery_time: recoveryMethod === "Log" ? recoveryTime : null,
+  //     // recovery_database: selectedDatabase,
+  //     recovery_port: selectedPort,
+  //   };
+
+  //   setIsProcessing(true);
+  //   setRecoveryMessage("");
+  //   setResponsePayload(null);
+
+  //   try {
+  //     const response = await fetch("http://localhost:5000/api/start-recovery", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify(payload),
+  //     });
+
+  //     const data = await response.json();
+  //     setResponsePayload(data);
+
+  //     if (response.ok) {
+  //       setRecoveryMessage(
+  //         data.message?.message || "Recovery process completed successfully!"
+  //       );
+  //     } else {
+  //       setRecoveryMessage(
+  //         data.message?.message || "Failed to complete the recovery process."
+  //       );
+  //     }
+  //   } catch (error) {
+  //     setRecoveryMessage(`Unexpected error: ${error.message}`);
+  //   } finally {
+  //     setIsProcessing(false);
+  //   }
+  // };
+
   const handleStartRecovery = async () => {
     if (!selectedHost || !selectedPort || !recoveryMethod) {
       alert("Please ensure all required fields are selected.");
       return;
     }
 
-    if (recoveryMethod === "WAL" && !walFileName.trim()) {
-      alert("Please enter a valid WAL file name.");
-      return;
+    if (recoveryMethod === "WAL") {
+      const lsnFormat = /^0\/[A-Fa-f0-9]+$/; // Regular expression for LSN format
+      if (!walFileName.trim() || !lsnFormat.test(walFileName)) {
+        alert(
+          "Invalid WAL LSN Number. Please ensure it is in the format 0/1D99F200."
+        );
+        return;
+      }
     }
 
     if (recoveryMethod === "Log" && !recoveryTime.trim()) {
@@ -73,7 +139,7 @@ function Recovery() {
       recovery_method: recoveryMethod,
       wal_file_name: recoveryMethod === "WAL" ? walFileName : null,
       recovery_time: recoveryMethod === "Log" ? recoveryTime : null,
-      recovery_database: selectedDatabase,
+      recovery_port: selectedPort,
     };
 
     setIsProcessing(true);
@@ -108,45 +174,41 @@ function Recovery() {
     }
   };
 
-  const fetchDatabases = async () => {
+  const handleSwitchToPrimary = async () => {
     if (!selectedHost || !selectedPort) {
-      setErrorMessage("Please select a valid PostgreSQL host and port.");
+      alert(
+        "Please select a host, database and port before switching primary."
+      );
       return;
     }
 
-    setIsFetchingDatabases(true);
-    setErrorMessage("");
+    const payload = {
+      recovery_host: selectedHost,
+      recovery_port: selectedPort,
+      // recovery_database: selectedDatabase,
+    };
 
     try {
-      const response = await fetch("http://localhost:5000/api/get-databases", {
+      const response = await fetch("http://localhost:5000/api/switch-primary", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ pg_host: selectedHost, port: selectedPort }),
+        body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.status === "success") {
-          setDatabases(result.databases || []);
-        } else {
-          setErrorMessage(`Error fetching databases: ${result.message}`);
-        }
+      const data = await response.json();
+
+      if (response.ok && data.status === "success") {
+        alert("Successfully switched the secondary database to primary.");
+        // setPrimaryDatabase(selectedDatabase);
+        // setSecondaryDatabase(null); // Clear secondary database after promotion
       } else {
-        const error = await response.json();
-        setErrorMessage(`Error: ${error.message}`);
+        alert(`Failed to switch primary: ${data.message}`);
       }
     } catch (error) {
-      setErrorMessage(`Unexpected error: ${error.message}`);
-    } finally {
-      setIsFetchingDatabases(false);
+      alert(`Unexpected error: ${error.message}`);
     }
-  };
-
-  const makeSecondaryPrimary = () => {
-    setPrimaryDatabase(secondaryDatabase);
-    setSecondaryDatabase(null); // Clear secondary database after promotion
   };
 
   return (
@@ -155,9 +217,7 @@ function Recovery() {
         <h1 className="text-4xl font-extrabold text-gray-800 mb-6 text-center">
           Database Recovery
         </h1>
-
         <ReplicaStatus />
-
         {/* Recovery Host Dropdown */}
         <div className="my-6">
           <label className="block text-gray-700 font-semibold mb-2">
@@ -175,23 +235,21 @@ function Recovery() {
             <option value="">-- Select a Host --</option>
             {pgHosts.map((host, index) => (
               <option key={index} value={`${host.pg_host}:${host.port}`}>
-                {host.pg_host}
+                {host.pg_host} : {host.port}
               </option>
             ))}
           </select>
         </div>
-
         {/* Fetch Databases Button */}
-        <button
+        {/* <button
           onClick={fetchDatabases}
           className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition duration-300"
           disabled={isFetchingDatabases}
         >
           {isFetchingDatabases ? "Fetching Databases..." : "Fetch Databases"}
-        </button>
-
+        </button> */}
         {/* Database Selection */}
-        {databases.length > 0 && (
+        {/* {databases.length > 0 && (
           <div className="mt-6">
             <label
               htmlFor="database"
@@ -213,9 +271,8 @@ function Recovery() {
               ))}
             </select>
           </div>
-        )}
-
-        {/* Button to make secondary database the primary */}
+        )} */}
+        {/* Button to make secondary database the primary
         {secondaryDatabase && (
           <div className="mt-6 text-center">
             <button
@@ -225,8 +282,7 @@ function Recovery() {
               Make Secondary Database Primary
             </button>
           </div>
-        )}
-
+        )} */}
         {/* Recovery Method Dropdown */}
         <div className="my-6">
           <label className="block text-gray-700 font-semibold mb-2">
@@ -245,7 +301,6 @@ function Recovery() {
             ))}
           </select>
         </div>
-
         {/* Conditional Inputs */}
         {recoveryMethod === "WAL" && (
           <div className="my-6">
@@ -254,15 +309,37 @@ function Recovery() {
             </label>
             <input
               type="text"
-              placeholder="e.g., wal_file_123.log"
+              placeholder="e.g., 0/1D99F200"
               value={walFileName}
               onChange={(e) => setWalFileName(e.target.value)}
               className="w-full border border-gray-300 rounded-lg py-2 px-4"
             />
           </div>
         )}
+        {/* {recoveryMethod === "WAL" && (
+          <div className="my-6">
+            <label className="block text-gray-700 font-semibold mb-2">
+              Enter WAL LSN Number
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., 0/1D99F200"
+              value={walFileName}
+              onChange={(e) => {
+                const input = e.target.value;
+                const lsnFormat = /^0\/[A-Fa-f0-9]+$/; // Regular expression for LSN format
+                if (lsnFormat.test(input) || input === "") {
+                  setWalFileName(input); // Update value if it matches the format or is empty
+                } else {
+                  alert("Invalid WAL LSN Number. Format must be 0/1D99F200.");
+                }
+              }}
+              className="w-full border border-gray-300 rounded-lg py-2 px-4"
+            />
+          </div>
+        )} */}
 
-        {recoveryMethod === "Log" && (
+        {/* {recoveryMethod === "Log" && (
           <div className="my-6">
             <label className="block text-gray-700 font-semibold mb-2">
               Enter Recovery Time
@@ -275,8 +352,34 @@ function Recovery() {
               className="w-full border border-gray-300 rounded-lg py-2 px-4"
             />
           </div>
-        )}
+        )} */}
 
+        {recoveryMethod === "Log" && (
+          <div className="my-6">
+            <label className="block text-gray-700 font-semibold mb-2">
+              Select Recovery Time
+            </label>
+            <ReactDatePicker
+              selected={recoveryTime ? new Date(recoveryTime) : null}
+              onChange={(date) => {
+                if (date) {
+                  const formattedDate = date
+                    .toUTCString()
+                    .replace("GMT", "UTC"); // Format the date
+                  setRecoveryTime(formattedDate);
+                } else {
+                  setRecoveryTime(""); // Clear the state if no date is selected
+                }
+              }}
+              showTimeSelect
+              timeFormat="HH:mm:ss"
+              timeIntervals={1}
+              dateFormat="EEE MMM d HH:mm:ss 'UTC' yyyy"
+              placeholderText="Select a date and time"
+              className="w-full border border-gray-300 rounded-lg py-2 px-4"
+            />
+          </div>
+        )}
         {/* Start Recovery Button */}
         <button
           onClick={handleStartRecovery}
@@ -285,7 +388,6 @@ function Recovery() {
         >
           {isProcessing ? "Processing..." : "Start Recovery"}
         </button>
-
         {/* Recovery Message */}
         {recoveryMessage && (
           <div className="mt-6 text-center">
@@ -300,8 +402,7 @@ function Recovery() {
             </p>
           </div>
         )}
-
-        {/* Show Make Secondary Database Primary button after recovery completion */}
+        {/* Show Make Secondary Database Primary button after recovery completion
         {responsePayload?.status === "success" && secondaryDatabase && (
           <div className="mt-6 text-center">
             <button
@@ -309,6 +410,25 @@ function Recovery() {
               className="bg-yellow-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-yellow-600"
             >
               Make Secondary Database Primary
+            </button>
+          </div>
+        )} */}
+        {/* <div className="border-t border-gray-300 mt-6 pt-4"> */}
+        {/* Switch Secondary to Primary Button */}
+        {/* <button
+          onClick={handleSwitchToPrimary}
+          className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition duration-300 mt-4"
+        >
+          Switch Secondary to Primary
+        </button> */}
+        {/* Show Make Secondary Database Primary button after recovery completion */}
+        {responsePayload?.status === "success" && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleSwitchToPrimary}
+              className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition duration-300 mt-4"
+            >
+              Switch Secondary to Primary
             </button>
           </div>
         )}
