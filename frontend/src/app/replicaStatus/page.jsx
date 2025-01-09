@@ -27,36 +27,47 @@ const ReplicaTable = ({ replicas, handlePauseResume }) => (
     </thead>
     <tbody>
       {replicas.map((replica) => (
-        <tr key={replica.id || `replica-${Math.random()}`} className="hover:bg-blue-50 text-center">
-          <td className="border text-gray-500 border-gray-200 px-4 py-2">{replica.name}</td>
+        <tr
+          key={replica.pg_host || `replica-${Math.random()}`}
+          className="hover:bg-blue-50 text-center"
+        >
+          <td className="border text-gray-500 border-gray-200 px-4 py-2">
+            {replica.name || replica.pg_host || "Unknown"}
+          </td>
           <td
             className={`border border-gray-200 px-4 py-2 font-semibold ${
               replica.status === "running"
-                ? "text-green-600" // Green color for running
-                : replica.status === "Paused"
-                ? "text-yellow-500" // Yellow color for Paused
-                : "text-gray-500" // Gray color for any other status
+                ? "text-green-600"
+                : replica.status === "paused"
+                ? "text-yellow-500"
+                : "text-gray-500"
             }`}
           >
             {replica.status}
           </td>
-          <td className="border text-gray-600 border-gray-200 px-4 py-2">{replica.delay}</td>
+          <td className="border text-gray-600 border-gray-200 px-4 py-2">
+            {replica.delay || "N/A"}
+          </td>
           <td className="border border-gray-200 px-4 py-2 space-x-2">
-            {replica.status === "Active" ? (
+            {replica.status === "paused" || replica.status === "Paused" ? (
               <button
-                onClick={() => handlePauseResume(replica.id, "pause")}
-                className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600 w-20 text-center"
-              >
-                Pause
-              </button>
-            ) : (
-              <button
-                onClick={() => handlePauseResume(replica.id, "resume")}
+                onClick={() =>
+                  handlePauseResume(replica.pg_host, replica.name, "resume")
+                }
                 className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600 w-20 text-center"
               >
                 Resume
               </button>
-            )}
+            ) : replica.status === "running" || replica.status === "Running" ? (
+              <button
+                onClick={() =>
+                  handlePauseResume(replica.pg_host, replica.name, "pause")
+                }
+                className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600 w-20 text-center"
+              >
+                Pause
+              </button>
+            ) : null}
           </td>
         </tr>
       ))}
@@ -75,11 +86,16 @@ const ReplicaStatus = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get("http://localhost:5000/api/replica-status");
+      const response = await axios.get(
+        "http://localhost:5000/api/replica-status"
+      );
       setReplicas(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Error fetching replicas:", err);
-      setError("Failed to fetch replica data. Please try again later.");
+      const errorMessage =
+        err.response?.data?.error ||
+        "Failed to fetch replica data. Please try again later.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -90,25 +106,40 @@ const ReplicaStatus = () => {
   }, []); // Empty dependency array ensures this runs only once
 
   // Handle Pause/Resume actions
-  const handlePauseResume = async (id, action) => {
+  const handlePauseResume = async (host, name, action) => {
+    setLoading(true); // Show loading state during the operation
     try {
-      await axios.post("http://localhost:5000/api/replica/manage", { action });
-
-      setReplicas((prevReplicas) =>
-        prevReplicas.map((replica) =>
-          replica.id === id
-            ? { ...replica, status: action === "pause" ? "Paused" : "Active" }
-            : replica
-        )
+      const response = await axios.post(
+        "http://localhost:5000/api/replica/manage",
+        {
+          action,
+          name,
+        }
       );
+
+      // Update the status in the frontend
+      if (response.data.status === "paused" || response.data.status === "resumed") {
+        setReplicas((prevReplicas) =>
+          prevReplicas.map((replica) =>
+            replica.pg_host === host
+              ? { ...replica, status: action === "pause" ? "paused" : "running" }
+              : replica
+          )
+        );
+      } else {
+        console.error("Error managing replica:", response.data.error);
+        alert(response.data.error || "An error occurred. Please try again.");
+      }
     } catch (err) {
       console.error(`Error ${action}ing replica:`, err);
-      alert(`Failed to ${action} replica. Please try again.`);
+      alert(`Failed to ${action} the replica. Please try again.`);
+    } finally {
+      setLoading(false); // Hide loading state
     }
   };
 
   return (
-    <div className=" bg-blue-50 flex flex-col items-center justify-center py-8">
+    <div className="bg-blue-50 flex flex-col items-center justify-center py-8">
       <div className="bg-white rounded-lg shadow-lg p-8 w-4/5 max-w-4xl">
         {/* Title */}
         <h1 className="text-3xl font-bold text-gray-700 mb-6 bg-blue-500 text-white text-center py-4 rounded">
@@ -134,4 +165,4 @@ const ReplicaStatus = () => {
   );
 };
 
-export default ReplicaStatus; 
+export default ReplicaStatus;

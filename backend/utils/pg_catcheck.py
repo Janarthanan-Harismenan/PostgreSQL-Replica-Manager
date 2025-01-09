@@ -33,6 +33,41 @@ def run_pg_catcheck_via_ssh(host, ssh_user, ssh_password, pg_host, port, user, d
         print(f"Error: {str(e)} (pg_catcheck.py)")
         return {"status": "error", "message": str(e)}
     
+def run_pg_catcheck(shell, pg_host, port, user, database, pg_password, timeout=30):
+    """
+    Runs the `pg_catcheck` command and captures its output, cleaning up irrelevant parts.
+    """
+    command = f"/usr/edb/as15/bin/pg_catcheck -h {pg_host} -p {port} -U {user} {database} --verbose | sed '1,/verbose/d'\n"
+    print(f"Executing command: {command.strip()} (pg_catcheck.py)")
+    shell.send(command)
+    time.sleep(1)  # Wait for the command prompt
+ 
+    print("Sending pg_password... (pg_catcheck.py)")
+    shell.send(pg_password + "\n")
+    time.sleep(5)  # Allow time for the password to be processed and output to be generated
+    print("Capturing output... (pg_catcheck.py)")
+   
+    output = ""
+    start_time = time.time()
+    while True:
+        if time.time() - start_time > timeout:
+            print("Timeout reached while waiting for pg_catcheck to complete. Exiting loop. (pg_catcheck.py)")
+            break
+        output_chunk = shell.recv(1024).decode()
+        output += output_chunk
+        if "done" in output.lower() or "error" in output.lower():  # Check if the command execution finished or if an error occurs
+            break
+ 
+    print("Cleaning up output... (pg_catcheck.py)")
+    # Extract the section between "Password:" and the next "-bash"
+    match = re.search(r"Password:\s*(.*?)\n-bash", output, re.DOTALL)
+    if match:
+        output = match.group(1).strip()
+    else:
+        output = "No valid output found or unexpected format."
+ 
+    return output
+    
 def get_databases(host, ssh_user, ssh_password, pg_host, port, user, pg_password):
     """
     Orchestrates the SSH connection, user switching, and `pg_catcheck` execution.
@@ -52,37 +87,37 @@ def get_databases(host, ssh_user, ssh_password, pg_host, port, user, pg_password
         print(f"Error: {str(e)} (pg_catcheck.py)")
         return {"status": "error", "message": str(e)}
  
-def run_pg_catcheck(shell, pg_host, port, user, database, pg_password,timeout=30):
-    """
-    Runs the `pg_catcheck` command and captures its output.
-    """
-    command = f"/usr/edb/as15/bin/pg_catcheck -h {pg_host} -p {port} -U {user} {database} --verbose | sed '1,/verbose/d'\n"
-    print(f"Executing command: {command.strip()} (pg_catcheck.py)")
-    shell.send(command)
-    time.sleep(1)  # Wait for the command prompt
+# def run_pg_catcheck(shell, pg_host, port, user, database, pg_password,timeout=30):
+#     """
+#     Runs the `pg_catcheck` command and captures its output.
+#     """
+#     command = f"/usr/edb/as15/bin/pg_catcheck -h {pg_host} -p {port} -U {user} {database} --verbose | sed '1,/verbose/d'\n"
+#     print(f"Executing command: {command.strip()} (pg_catcheck.py)")
+#     shell.send(command)
+#     time.sleep(1)  # Wait for the command prompt
  
-    print("Sending pg_password... (pg_catcheck.py)")
-    shell.send(pg_password + "\n")
-    time.sleep(5)  # Allow time for the password to be processed and output to be generated
+#     print("Sending pg_password... (pg_catcheck.py)")
+#     shell.send(pg_password + "\n")
+#     time.sleep(5)  # Allow time for the password to be processed and output to be generated
  
-    print("Capturing output... (pg_catcheck.py)")
-    output = ""
-    start_time = time.time()
-    while True:
-        print(time.time() - start_time)
-        if time.time() - start_time > timeout:
-            print("Timeout reached while waiting for pg_catcheck to complete. Exiting loop. (pg_catcheck.py)")
-            break
-        output_chunk = shell.recv(1024).decode()
-        output += output_chunk
-        if "done" in output.lower() or "error" in output.lower():  # Check if the command execution finished or if an error occurs
-            break
+#     print("Capturing output... (pg_catcheck.py)")
+#     output = ""
+#     start_time = time.time()
+#     while True:
+#         print(time.time() - start_time)
+#         if time.time() - start_time > timeout:
+#             print("Timeout reached while waiting for pg_catcheck to complete. Exiting loop. (pg_catcheck.py)")
+#             break
+#         output_chunk = shell.recv(1024).decode()
+#         output += output_chunk
+#         if "done" in output.lower() or "error" in output.lower():  # Check if the command execution finished or if an error occurs
+#             break
  
-    print("Cleaning up output... (pg_catcheck.py)")
-    output = re.split(r'verbose', output, 1)[-1]
-    output = "verbose" + output  # Re-add 'verbose' to the start of the string
+#     print("Cleaning up output... (pg_catcheck.py)")
+#     output = re.split(r'verbose', output, 1)[-1]
+#     output = "verbose" + output  # Re-add 'verbose' to the start of the string
  
-    return output
+#     return output
  
 def extract_results(output):
     """
@@ -99,25 +134,48 @@ def extract_results(output):
         "errors": errors[0] if errors else 0
     }
  
-def convert_log_to_pdf(log_output, filename="pg_catcheck_output.pdf"):
-    """
-    Converts the log output to a PDF file.
-    """
-    print("Converting log to PDF... (pg_catcheck.py)")
-    c = canvas.Canvas(filename, pagesize=letter)
+# def convert_log_to_pdf(log_output, filename="pg_catcheck_output.pdf"):
+#     """
+#     Converts the log output to a PDF file.
+#     """
+#     print("Converting log to PDF... (pg_catcheck.py)")
+#     c = canvas.Canvas(filename, pagesize=letter)
+#     width, height = letter
+ 
+#     text_object = c.beginText(40, height - 40)
+#     text_object.setFont("Helvetica", 10)
+#     text_object.setTextOrigin(40, height - 40)
+ 
+#     print("Adding content to PDF... (pg_catcheck.py)")
+#     for line in log_output.splitlines():
+#         text_object.textLine(line)
+ 
+#     c.drawText(text_object)
+#     c.showPage()
+#     c.save()
+ 
+#     print(f"PDF saved as {filename} (pg_catcheck.py)")
+#     return filename
+
+def convert_log_to_pdf(log_output):
+    pdf_filename = "pg_catcheck_output.pdf"
+    c = canvas.Canvas(pdf_filename, pagesize=letter)
     width, height = letter
+    margin = 50
  
-    text_object = c.beginText(40, height - 40)
-    text_object.setFont("Helvetica", 10)
-    text_object.setTextOrigin(40, height - 40)
+    # Start writing from the top
+    y_position = height - margin
+    line_height = 12  # Line spacing
  
-    print("Adding content to PDF... (pg_catcheck.py)")
-    for line in log_output.splitlines():
-        text_object.textLine(line)
+    # Split the log into lines
+    lines = log_output.splitlines()
  
-    c.drawText(text_object)
-    c.showPage()
+    for line in lines:
+        if y_position < margin:  # Create a new page if no space left
+            c.showPage()
+            y_position = height - margin
+        c.drawString(margin, y_position, line)
+        y_position -= line_height
+ 
     c.save()
- 
-    print(f"PDF saved as {filename} (pg_catcheck.py)")
-    return filename
+    return pdf_filename

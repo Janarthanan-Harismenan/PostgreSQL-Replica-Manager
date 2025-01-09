@@ -132,17 +132,11 @@ function HomePage() {
               buttonText: "Perform Catalog Check",
             },
             {
-              tab: "wal",
-              title: "WAL",
-              description: "Track and manage your Write-Ahead Logging for better data integrity.",
-              buttonText: "Monitor WAL",
+              tab: "pointFinder",
+              title: "Point Finder",
+              description: "Where do you want to go? Choose between WAL and Login.",
+              buttonText: "Explore Options",
             },
-            // {
-            //   tab: "logFiles",
-            //   title: "Log Files",
-            //   description: "View and analyze system logs to ensure smooth operation and troubleshoot issues.",
-            //   buttonText: "View Log Files",
-            // },
             {
               tab: "recovery",
               title: "Recovery",
@@ -165,6 +159,7 @@ function HomePage() {
             </div>
           ))}
         </section>
+
       </div>
     </div>
   );

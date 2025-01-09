@@ -66,13 +66,20 @@ function CatalogCheck() {
     setReportGenerated(false);
 
     try {
-      const response = await fetch("http://localhost:5000/api/run-pg-catcheck", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ database: selectedDatabase, pg_host: pgHost, port: port }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/run-pg-catcheck",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            database: selectedDatabase,
+            pg_host: pgHost,
+            port: port,
+          }),
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -83,7 +90,9 @@ function CatalogCheck() {
             warnings: result.warnings || 0,
           });
 
-          const pdfResponse = await fetch("http://localhost:5000/api/generate-pdf");
+          const pdfResponse = await fetch(
+            "http://localhost:5000/api/generate-pdf"
+          );
           if (pdfResponse.ok) {
             const blob = await pdfResponse.blob();
             const pdfUrl = URL.createObjectURL(blob);
@@ -107,9 +116,11 @@ function CatalogCheck() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center p-6">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-4xl">
-        <h1 className="text-4xl font-bold text-blue-600 text-center mb-6">Catalog Check</h1>
+        <h1 className="text-4xl font-bold text-blue-600 text-center mb-8">
+          Catalog Check
+        </h1>
 
         {/* Error Message */}
         {errorMessage && (
@@ -120,7 +131,10 @@ function CatalogCheck() {
 
         {/* PostgreSQL Host Input */}
         <div className="mb-6">
-          <label htmlFor="pgHost" className="block text-gray-700 font-semibold mb-2">
+          <label
+            htmlFor="pgHost"
+            className="block text-gray-700 font-semibold mb-2"
+          >
             PostgreSQL Host (pg_host):
           </label>
           <input
@@ -135,7 +149,10 @@ function CatalogCheck() {
 
         {/* Port Input */}
         <div className="mb-6">
-          <label htmlFor="port" className="block text-gray-700 font-semibold mb-2">
+          <label
+            htmlFor="port"
+            className="block text-gray-700 font-semibold mb-2"
+          >
             Port:
           </label>
           <input
@@ -160,7 +177,10 @@ function CatalogCheck() {
         {/* Select Database */}
         {databases.length > 0 && (
           <div className="mt-6">
-            <label htmlFor="database" className="block text-gray-700 font-semibold mb-2">
+            <label
+              htmlFor="database"
+              className="block text-gray-700 font-semibold mb-2"
+            >
               Select Database:
             </label>
             <select
@@ -195,9 +215,16 @@ function CatalogCheck() {
           <div className="mt-6 text-center">
             <p className="text-green-500 font-semibold mb-4">Report Summary:</p>
             <div className="text-left bg-gray-100 p-4 rounded">
-              <p><strong>Errors:</strong> {reportSummary.errors}</p>
-              <p><strong>Inconsistencies:</strong> {reportSummary.inconsistencies}</p>
-              <p><strong>Warnings:</strong> {reportSummary.warnings}</p>
+              <p>
+                <strong>Errors:</strong> {reportSummary.errors}
+              </p>
+              <p>
+                <strong>Inconsistencies:</strong>{" "}
+                {reportSummary.inconsistencies}
+              </p>
+              <p>
+                <strong>Warnings:</strong> {reportSummary.warnings}
+              </p>
             </div>
 
             <a

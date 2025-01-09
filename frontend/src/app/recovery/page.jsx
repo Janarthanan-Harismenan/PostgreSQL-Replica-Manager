@@ -5,47 +5,54 @@ import { useRouter } from "next/navigation";
 import ReplicaStatus from "../ReplicaStatus/page";
 
 function Recovery() {
-  const [recoveryMethod, setRecoveryMethod] = useState(""); // For recovery method dropdown
-  const [recoveryOption, setRecoveryOption] = useState(""); // For database selection
-  const [walFileName, setWalFileName] = useState(""); // WAL file input
-  const [recoveryTime, setRecoveryTime] = useState(""); // Recovery time input
+  const [recoveryMethod, setRecoveryMethod] = useState("");
+  const [selectedHost, setSelectedHost] = useState("");
+  const [selectedPort, setSelectedPort] = useState("");
+  const [walFileName, setWalFileName] = useState("");
+  const [recoveryTime, setRecoveryTime] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [recoveryMessage, setRecoveryMessage] = useState("");
-  const [paths, setPaths] = useState([]); // For storing paths from PATH_CONFIG
-  const [selectedPath, setSelectedPath] = useState(""); // For storing the selected path
+  const [pgHosts, setPgHosts] = useState([]);
+  const [responsePayload, setResponsePayload] = useState(null);
+  const [isFetchingDatabases, setIsFetchingDatabases] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [databases, setDatabases] = useState([]);
+  const [selectedDatabase, setSelectedDatabase] = useState("");
+  const [primaryDatabase, setPrimaryDatabase] = useState(null); // New state for primary database
+  const [secondaryDatabase, setSecondaryDatabase] = useState(null); // New state for secondary database
+
   const router = useRouter();
 
-  const recoveryOptions = ["Database 1", "Database 2", "Database 3"];
   const recoveryMethods = ["WAL", "Log"];
 
-  // Fetch paths from the backend
   useEffect(() => {
-    const fetchPaths = async () => {
+    const fetchPgHostsAndPorts = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/get-path-config");
+        const response = await fetch(
+          "http://localhost:5000/api/get-server-config"
+        );
         if (response.ok) {
           const data = await response.json();
-          setPaths(data.paths || []);
-          setSelectedPath(data.paths?.[0] || ""); // Default to the first path
+          const pgHostsAndPorts = data.pg_hosts_and_ports || [];
+          setPgHosts(pgHostsAndPorts);
+          if (pgHostsAndPorts.length > 0) {
+            setSelectedHost(pgHostsAndPorts[0].pg_host || "");
+            setSelectedPort(pgHostsAndPorts[0].port || "");
+          }
         } else {
-          alert("Failed to fetch paths from the server.");
+          alert("Failed to fetch server configurations.");
         }
       } catch (error) {
         alert(`Unexpected error: ${error.message}`);
       }
     };
 
-    fetchPaths();
+    fetchPgHostsAndPorts();
   }, []);
 
   const handleStartRecovery = async () => {
-    if (!recoveryOption) {
-      alert("Please select a recovery option.");
-      return;
-    }
-
-    if (!recoveryMethod) {
-      alert("Please select a recovery method.");
+    if (!selectedHost || !selectedPort || !recoveryMethod) {
+      alert("Please ensure all required fields are selected.");
       return;
     }
 
@@ -55,29 +62,91 @@ function Recovery() {
     }
 
     if (recoveryMethod === "Log" && !recoveryTime.trim()) {
-      alert("Please enter a valid recovery time.");
+      alert(
+        "Please enter a valid recovery time in the format: Thu Jan  2 04:31:31 UTC 2025."
+      );
       return;
     }
 
-    if (!selectedPath) {
-      alert("Please select a recovery path.");
-      return;
-    }
+    const payload = {
+      recovery_host: selectedHost,
+      recovery_method: recoveryMethod,
+      wal_file_name: recoveryMethod === "WAL" ? walFileName : null,
+      recovery_time: recoveryMethod === "Log" ? recoveryTime : null,
+      recovery_database: selectedDatabase,
+    };
 
     setIsProcessing(true);
     setRecoveryMessage("");
+    setResponsePayload(null);
 
-    // Simulate recovery process
-    setTimeout(() => {
-      const message = `Recovery initiated for "${recoveryOption}" using method "${recoveryMethod}"${
-        recoveryMethod === "WAL"
-          ? ` with WAL file "${walFileName}"`
-          : ` with recovery time "${recoveryTime}"`
-      } in path "${selectedPath}".`;
-      setRecoveryMessage(message);
-      alert("Recovery process started successfully!");
+    try {
+      const response = await fetch("http://localhost:5000/api/start-recovery", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      setResponsePayload(data);
+
+      if (response.ok) {
+        setRecoveryMessage(
+          data.message?.message || "Recovery process completed successfully!"
+        );
+      } else {
+        setRecoveryMessage(
+          data.message?.message || "Failed to complete the recovery process."
+        );
+      }
+    } catch (error) {
+      setRecoveryMessage(`Unexpected error: ${error.message}`);
+    } finally {
       setIsProcessing(false);
-    }, 1000);
+    }
+  };
+
+  const fetchDatabases = async () => {
+    if (!selectedHost || !selectedPort) {
+      setErrorMessage("Please select a valid PostgreSQL host and port.");
+      return;
+    }
+
+    setIsFetchingDatabases(true);
+    setErrorMessage("");
+
+    try {
+      const response = await fetch("http://localhost:5000/api/get-databases", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ pg_host: selectedHost, port: selectedPort }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.status === "success") {
+          setDatabases(result.databases || []);
+        } else {
+          setErrorMessage(`Error fetching databases: ${result.message}`);
+        }
+      } else {
+        const error = await response.json();
+        setErrorMessage(`Error: ${error.message}`);
+      }
+    } catch (error) {
+      setErrorMessage(`Unexpected error: ${error.message}`);
+    } finally {
+      setIsFetchingDatabases(false);
+    }
+  };
+
+  const makeSecondaryPrimary = () => {
+    setPrimaryDatabase(secondaryDatabase);
+    setSecondaryDatabase(null); // Clear secondary database after promotion
   };
 
   return (
@@ -89,42 +158,84 @@ function Recovery() {
 
         <ReplicaStatus />
 
-        {/* Recovery Options Dropdown */}
-        <div className="mb-6">
-          <label
-            htmlFor="recoveryOption"
-            className="block text-gray-700 font-semibold mb-2"
-          >
-            Select Database
+        {/* Recovery Host Dropdown */}
+        <div className="my-6">
+          <label className="block text-gray-700 font-semibold mb-2">
+            Select Recovery Host
           </label>
           <select
-            id="recoveryOption"
-            value={recoveryOption}
-            onChange={(e) => setRecoveryOption(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+            value={`${selectedHost}:${selectedPort}`}
+            onChange={(e) => {
+              const [host, port] = e.target.value.split(":");
+              setSelectedHost(host);
+              setSelectedPort(port);
+            }}
+            className="w-full border border-gray-300 rounded-lg py-2 px-4"
           >
-            <option value="">-- Select a Database --</option>
-            {recoveryOptions.map((option, index) => (
-              <option key={index} value={option}>
-                {option}
+            <option value="">-- Select a Host --</option>
+            {pgHosts.map((host, index) => (
+              <option key={index} value={`${host.pg_host}:${host.port}`}>
+                {host.pg_host}
               </option>
             ))}
           </select>
         </div>
 
+        {/* Fetch Databases Button */}
+        <button
+          onClick={fetchDatabases}
+          className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition duration-300"
+          disabled={isFetchingDatabases}
+        >
+          {isFetchingDatabases ? "Fetching Databases..." : "Fetch Databases"}
+        </button>
+
+        {/* Database Selection */}
+        {databases.length > 0 && (
+          <div className="mt-6">
+            <label
+              htmlFor="database"
+              className="block text-gray-700 font-semibold mb-2"
+            >
+              Select Database:
+            </label>
+            <select
+              id="database"
+              value={selectedDatabase}
+              onChange={(e) => setSelectedDatabase(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="">-- Select a Database --</option>
+              {databases.map((db, index) => (
+                <option key={index} value={db}>
+                  {db}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Button to make secondary database the primary */}
+        {secondaryDatabase && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={makeSecondaryPrimary}
+              className="bg-yellow-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-yellow-600"
+            >
+              Make Secondary Database Primary
+            </button>
+          </div>
+        )}
+
         {/* Recovery Method Dropdown */}
-        <div className="mb-6">
-          <label
-            htmlFor="recoveryMethod"
-            className="block text-gray-700 font-semibold mb-2"
-          >
+        <div className="my-6">
+          <label className="block text-gray-700 font-semibold mb-2">
             Select Recovery Method
           </label>
           <select
-            id="recoveryMethod"
             value={recoveryMethod}
             onChange={(e) => setRecoveryMethod(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+            className="w-full border border-gray-300 rounded-lg py-2 px-4"
           >
             <option value="">-- Select a Method --</option>
             {recoveryMethods.map((method, index) => (
@@ -137,38 +248,31 @@ function Recovery() {
 
         {/* Conditional Inputs */}
         {recoveryMethod === "WAL" && (
-          <div className="mb-6">
-            <label
-              htmlFor="walFileName"
-              className="block text-gray-700 font-semibold mb-2"
-            >
+          <div className="my-6">
+            <label className="block text-gray-700 font-semibold mb-2">
               Enter WAL LSN Number
             </label>
             <input
               type="text"
-              id="walFileName"
               placeholder="e.g., wal_file_123.log"
               value={walFileName}
               onChange={(e) => setWalFileName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+              className="w-full border border-gray-300 rounded-lg py-2 px-4"
             />
           </div>
         )}
 
         {recoveryMethod === "Log" && (
-          <div className="mb-6">
-            <label
-              htmlFor="recoveryTime"
-              className="block text-gray-700 font-semibold mb-2"
-            >
+          <div className="my-6">
+            <label className="block text-gray-700 font-semibold mb-2">
               Enter Recovery Time
             </label>
             <input
-              type="datetime-local"
-              id="recoveryTime"
+              type="text"
+              placeholder="e.g., Thu Jan  2 04:31:31 UTC 2025"
               value={recoveryTime}
               onChange={(e) => setRecoveryTime(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+              className="w-full border border-gray-300 rounded-lg py-2 px-4"
             />
           </div>
         )}
@@ -185,7 +289,27 @@ function Recovery() {
         {/* Recovery Message */}
         {recoveryMessage && (
           <div className="mt-6 text-center">
-            <p className="text-green-600 font-medium">{recoveryMessage}</p>
+            <p
+              className={`font-bold ${
+                responsePayload?.status === "success"
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {recoveryMessage}
+            </p>
+          </div>
+        )}
+
+        {/* Show Make Secondary Database Primary button after recovery completion */}
+        {responsePayload?.status === "success" && secondaryDatabase && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={makeSecondaryPrimary}
+              className="bg-yellow-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-yellow-600"
+            >
+              Make Secondary Database Primary
+            </button>
           </div>
         )}
 

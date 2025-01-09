@@ -1,0 +1,23 @@
+s stated in this warning.             |
+        |                                                                        |
+        | Optimized as per CIS CentOS Linux 7 Benchmark v2.2.0-r20210814                  |
+        |                                                                        |
+        \------------------------------------------------------------------------/
+
+[0m[devuser@ip-172-20-224-175 ~]$ sudo -i
+[root@ip-172-20-224-175 ~]# dev@cmb123
+bash: dev@cmb123: command not found...
+[root@ip-172-20-224-175 ~]# su - enterprisedb
+Last login: Fri Jan  3 11:21:59 UTC 2025 on pts/2
+-bash-4.2$ touch /u01/edb/as15/data/recovery.signal
+-bash-4.2$ cat /u01/edb/as15/data/postgresql.conf
+# -----------------------------
+# PostgreSQL configuration file
+# -----------------------------
+#
+# This file consists of lines of the form:
+#
+#   name = value
+#
+# (The "=" is optional.)  Whitespace may be used.  Comments are introduced with
+# "#" anywhere on a line.  The complete list of parameter n

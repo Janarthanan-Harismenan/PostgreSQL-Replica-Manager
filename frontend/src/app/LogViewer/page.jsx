@@ -1,43 +1,49 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
 function LogViewer() {
   const [logFiles, setLogFiles] = useState([]);
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
   const [keyword, setKeyword] = useState("");
-  const [fileContent, setFileContent] = useState([]); // Store as a 2D array for before, matched, after content
-  const [selectedLineIndex, setSelectedLineIndex] = useState(null); // Track selected matched line
-  const [logFetchLoading, setLogFetchLoading] = useState(false); // Loading state for fetching log files
-  const [searchLoading, setSearchLoading] = useState(false); // Separate loading state for search
+  const [fileContent, setFileContent] = useState([]);
+  const [selectedLineIndex, setSelectedLineIndex] = useState(null);
+  const [logFetchLoading, setLogFetchLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [noContentMessage, setNoContentMessage] = useState("");
+  const [numberOfFiles, setNumberOfFiles] = useState(10);
+  const [findButtonPressed, setFindButtonPressed] = useState(false); // Track if "Find" has been pressed
   const router = useRouter();
 
-  // Fetch the last 10 log files on component mount
-  useEffect(() => {
-    const fetchLogFiles = async () => {
-      try {
-        setLogFetchLoading(true);
-        const response = await fetch("http://localhost:5000/api/fetch-last-10-logs");
-        if (response.ok) {
-          const data = await response.json();
-          setLogFiles(data.log_files || []);
-          setSelectedFileIndex(0); // Default to the first file
-        } else {
-          const error = await response.json();
-          setErrorMessage(error.message || "Failed to fetch log files.");
-        }
-      } catch (error) {
-        setErrorMessage(`Unexpected error: ${error.message}`);
-      } finally {
-        setLogFetchLoading(false);
+  // Fetch the specified number of log files when the "Find" button is clicked
+  const fetchLogFiles = async () => {
+    try {
+      setLogFetchLoading(true);
+      setErrorMessage("");
+      setFindButtonPressed(true); // Mark that "Find" has been pressed
+      const response = await fetch("http://localhost:5000/api/fetch-last-logs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ number_of_files: numberOfFiles }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLogFiles(data.log_files || []);
+        setSelectedFileIndex(0); // Default to the first file
+      } else {
+        const error = await response.json();
+        setErrorMessage(error.message || "Failed to fetch log files.");
       }
-    };
-
-    fetchLogFiles();
-  }, []);
+    } catch (error) {
+      setErrorMessage(`Unexpected error: ${error.message}`);
+    } finally {
+      setLogFetchLoading(false);
+    }
+  };
 
   // Fetch content of the selected file for the given keyword
   const fetchFileContent = async () => {
@@ -49,9 +55,9 @@ function LogViewer() {
     try {
       setSearchLoading(true);
       setErrorMessage("");
-      setFileContent([]); // Reset content on new search
-      setNoContentMessage(""); // Reset "no content" message
-      setSelectedLineIndex(null); // Reset selected line
+      setFileContent([]);
+      setNoContentMessage("");
+      setSelectedLineIndex(null);
 
       const response = await fetch("http://localhost:5000/api/search-content-of-log-file", {
         method: "POST",
@@ -87,18 +93,18 @@ function LogViewer() {
   const handleNext = () => {
     if (selectedFileIndex < logFiles.length - 1) {
       setSelectedFileIndex(selectedFileIndex + 1);
-      setFileContent([]); // Reset content when changing file
-      setNoContentMessage(""); // Reset "no content" message
-      setSelectedLineIndex(null); // Reset selected line
+      setFileContent([]);
+      setNoContentMessage("");
+      setSelectedLineIndex(null);
     }
   };
 
   // Reset file content when a new file is clicked
   const handleFileClick = (index) => {
     setSelectedFileIndex(index);
-    setFileContent([]); // Clear content when a new file is selected
-    setNoContentMessage(""); // Reset "no content" message
-    setSelectedLineIndex(null); // Reset selected line
+    setFileContent([]);
+    setNoContentMessage("");
+    setSelectedLineIndex(null);
   };
 
   return (
@@ -110,6 +116,32 @@ function LogViewer() {
 
         {errorMessage && <p className="text-red-500 font-semibold text-center">{errorMessage}</p>}
 
+        <div className="mb-6 space-y-4">
+          <div>
+            <label htmlFor="numberOfFiles" className="block text-gray-700 font-semibold mb-2">
+              Number of Files to Fetch:
+            </label>
+            <input
+              id="numberOfFiles"
+              type="number"
+              value={numberOfFiles}
+              onChange={(e) => setNumberOfFiles(Number(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="Enter number of files"
+            />
+          </div>
+
+          <button
+            onClick={fetchLogFiles}
+            className={`w-full text-white py-3 rounded-lg font-semibold transition duration-300 ${
+              logFetchLoading ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+            }`}
+            disabled={logFetchLoading}
+          >
+            {logFetchLoading ? "Finding..." : "Find"}
+          </button>
+        </div>
+
         {!logFetchLoading && logFiles.length > 0 && (
           <>
             <div className="mb-6">
@@ -118,8 +150,10 @@ function LogViewer() {
                 {logFiles.map((file, index) => (
                   <li
                     key={index}
-                    className={`text-gray-600 cursor-pointer ${selectedFileIndex === index ? "text-blue-600 font-bold underline" : "hover:underline"}`}
-                    onClick={() => handleFileClick(index)} // Handle file click to reset content
+                    className={`text-gray-600 cursor-pointer ${
+                      selectedFileIndex === index ? "text-blue-600 font-bold underline" : "hover:underline"
+                    }`}
+                    onClick={() => handleFileClick(index)}
                   >
                     {file}
                   </li>
@@ -144,7 +178,9 @@ function LogViewer() {
 
               <button
                 onClick={fetchFileContent}
-                className={`w-full text-white py-3 rounded-lg font-semibold transition duration-300 ${searchLoading ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
+                className={`w-full text-white py-3 rounded-lg font-semibold transition duration-300 ${
+                  searchLoading ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                }`}
                 disabled={searchLoading}
               >
                 {searchLoading ? "Searching..." : "Search"}
@@ -185,7 +221,9 @@ function LogViewer() {
 
             <button
               onClick={handleNext}
-              className={`mt-6 w-full text-white py-3 rounded-lg font-semibold transition duration-300 ${selectedFileIndex >= logFiles.length - 1 ? "bg-gray-300 cursor-not-allowed" : "bg-gray-600 hover:bg-gray-700"}`}
+              className={`mt-6 w-full text-white py-3 rounded-lg font-semibold transition duration-300 ${
+                selectedFileIndex >= logFiles.length - 1 ? "bg-gray-300 cursor-not-allowed" : "bg-gray-600 hover:bg-gray-700"
+              }`}
               disabled={selectedFileIndex >= logFiles.length - 1}
             >
               Next File
@@ -197,12 +235,29 @@ function LogViewer() {
             >
               Back to WAL Checker
             </button>
+
+            {/* <button
+              onClick={() => router.push("/")}
+              className="mt-6 w-full bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition duration-300"
+            >
+              Back to Home
+            </button> */}
           </>
         )}
 
-        {!logFetchLoading && logFiles.length === 0 && (
+        {!logFetchLoading && findButtonPressed && logFiles.length === 0 && (
           <p className="text-red-500 font-semibold mt-4 text-center">No log files found. Please try again later.</p>
         )}
+
+      <div className="my-6">
+        <button
+          onClick={() => router.push("/")}
+          className="w-full bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition duration-300"
+        >
+          Back to Home
+        </button>
+      </div>
+
       </div>
     </div>
   );

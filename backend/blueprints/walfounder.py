@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from utils.wal_handler import run_full_process  # Replace with the actual module containing the function
-from config import DATABASE_CONFIG
+from config import DATABASE_CONFIG, PATH_CONFIG
  
 # Define the WAL blueprint
 wal_blueprint = Blueprint('wal', __name__)
@@ -44,3 +44,13 @@ def wal_check():
     print("Result from run_full_process:", result)
     # Return the result as a JSON response
     return jsonify(result)
+
+# Add route to fetch PATH_CONFIG
+@wal_blueprint.route("/get-path-config", methods=["GET"])
+def get_path_config():
+    """API route to fetch paths from PATH_CONFIG."""
+    try:
+        paths = list(PATH_CONFIG.values())
+        return jsonify({"paths": paths}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
