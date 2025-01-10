@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from utils.recovery_manager import run_full_process_with_recovery_time, run_full_process_with_wal_file, switch_primary_database  # Import the function for recovery
+from utils.recovery_manager import get_port_by_config_key, run_full_process_with_recovery_time, run_full_process_with_wal_file, switch_primary_database  # Import the function for recovery
 from config import DATABASE_CONFIG, SERVER_CONFIG
 
 # Define the recovery blueprint
@@ -21,7 +21,11 @@ def start_recovery_process():
     wal_file_name = data.get("wal_file_name")  # WAL file name (if recovery method is WAL)
     recovery_time = data.get("recovery_time")  # Recovery time (if method is Log)
     # recovery_database = data.get("recovery_database")
-    recovery_port = data.get("recovery_port")
+    
+    # recovery_port = data.get("recovery_port")
+    config_key = data.get("config_key")
+    recovery_port = get_port_by_config_key(config_key)
+    # recovery_port = 
 
     if not all([recovery_host, recovery_method]):
         return jsonify({"status": "error", "message": "Missing required parameters: 'recovery_host' and/or 'recovery_method'"}), 400
@@ -91,15 +95,33 @@ def start_recovery_process():
 #     except Exception as e:
 #         return jsonify({"error": str(e)}), 500
 
+# @recovery_blueprint.route("/get-server-config", methods=["GET"])
+# def get_server_pg_hosts_and_ports():
+#     """API route to fetch pg_host addresses and ports from SERVER_CONFIG."""
+#     try:
+#         # Extract all pg_host addresses and ports from SERVER_CONFIG
+#         pg_hosts_and_ports = [
+#             {"pg_host": config.get("pg_host"), "port": config.get("port")}
+#             for config in SERVER_CONFIG.values()
+#         ]
+#         return jsonify({"pg_hosts_and_ports": pg_hosts_and_ports}), 200
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
 @recovery_blueprint.route("/get-server-config", methods=["GET"])
 def get_server_pg_hosts_and_ports():
-    """API route to fetch pg_host addresses and ports from SERVER_CONFIG."""
+    """API route to fetch pg_host addresses, ports, and their config keys from SERVER_CONFIG."""
     try:
-        # Extract all pg_host addresses and ports from SERVER_CONFIG
+        # Combine pg_host, port, and config key in a single list
         pg_hosts_and_ports = [
-            {"pg_host": config.get("pg_host"), "port": config.get("port")}
-            for config in SERVER_CONFIG.values()
+            {
+                "pg_host": config.get("pg_host"),
+                # "port": config.get("port"),
+                "config_key": key
+            }
+            for key, config in SERVER_CONFIG.items()
         ]
+        
         return jsonify({"pg_hosts_and_ports": pg_hosts_and_ports}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -126,8 +148,11 @@ def switch_primary():
     ssh_password = DATABASE_CONFIG.get("ssh_password")
     
     recovery_host = data.get("recovery_host")
+    config_key = data.get("config_key")
+    
     # recovery_database = data.get("recovery_database")
-    recovery_port = data.get("recovery_port")
+    # recovery_port = data.get("recovery_port")
+    recovery_port = get_port_by_config_key(config_key)
     
     if not all([recovery_host]):
         return jsonify({"status": "error", "message": "Missing required parameters: 'recovery_host' and/or 'recovery_method'"}), 400

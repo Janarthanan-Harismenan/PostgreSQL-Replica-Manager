@@ -9,7 +9,9 @@ import ReactDatePicker from "react-datepicker";
 function Recovery() {
   const [recoveryMethod, setRecoveryMethod] = useState("");
   const [selectedHost, setSelectedHost] = useState("");
-  const [selectedPort, setSelectedPort] = useState("");
+  // const [selectedPort, setSelectedPort] = useState("");
+  const [selectedConfigKey, setSelectedConfigKey] = useState("");
+  const [pgHost, setPgHost] = useState("");
   const [walFileName, setWalFileName] = useState("");
   const [recoveryTime, setRecoveryTime] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -39,7 +41,8 @@ function Recovery() {
           setPgHosts(pgHostsAndPorts);
           if (pgHostsAndPorts.length > 0) {
             setSelectedHost(pgHostsAndPorts[0].pg_host || "");
-            setSelectedPort(pgHostsAndPorts[0].port || "");
+            // setSelectedPort(pgHostsAndPorts[0].port || "");
+            setSelectedConfigKey(pgHostsAndPorts[0].config_key || "");
           }
         } else {
           alert("Failed to fetch server configurations.");
@@ -112,7 +115,7 @@ function Recovery() {
   // };
 
   const handleStartRecovery = async () => {
-    if (!selectedHost || !selectedPort || !recoveryMethod) {
+    if (!selectedHost || !selectedConfigKey || !recoveryMethod) {
       alert("Please ensure all required fields are selected.");
       return;
     }
@@ -139,7 +142,7 @@ function Recovery() {
       recovery_method: recoveryMethod,
       wal_file_name: recoveryMethod === "WAL" ? walFileName : null,
       recovery_time: recoveryMethod === "Log" ? recoveryTime : null,
-      recovery_port: selectedPort,
+      config_key: selectedConfigKey,
     };
 
     setIsProcessing(true);
@@ -175,7 +178,7 @@ function Recovery() {
   };
 
   const handleSwitchToPrimary = async () => {
-    if (!selectedHost || !selectedPort) {
+    if (!selectedHost || !selectedConfigKey) {
       alert(
         "Please select a host, database and port before switching primary."
       );
@@ -184,7 +187,7 @@ function Recovery() {
 
     const payload = {
       recovery_host: selectedHost,
-      recovery_port: selectedPort,
+      config_key: selectedConfigKey,
       // recovery_database: selectedDatabase,
     };
 
@@ -224,18 +227,18 @@ function Recovery() {
             Select Recovery Host
           </label>
           <select
-            value={`${selectedHost}:${selectedPort}`}
+            value={`${selectedHost}:${selectedConfigKey}`}
             onChange={(e) => {
-              const [host, port] = e.target.value.split(":");
+              const [host, config_key] = e.target.value.split(":");
               setSelectedHost(host);
-              setSelectedPort(port);
+              setSelectedConfigKey(config_key);
             }}
             className="w-full border border-gray-300 rounded-lg py-2 px-4"
           >
             <option value="">-- Select a Host --</option>
             {pgHosts.map((host, index) => (
-              <option key={index} value={`${host.pg_host}:${host.port}`}>
-                {host.pg_host} : {host.port}
+              <option key={index} value={`${host.pg_host}:${host.config_key}`}>
+                {host.pg_host} : {host.config_key}
               </option>
             ))}
           </select>

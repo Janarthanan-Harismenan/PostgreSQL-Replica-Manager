@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 function CatalogCheck() {
@@ -10,62 +10,45 @@ function CatalogCheck() {
   // const [selectedDatabase, setSelectedDatabase] = useState("");
   const [reportGenerated, setReportGenerated] = useState(false);
   const [reportUrl, setReportUrl] = useState("");
+  const [selectedHost, setSelectedHost] = useState("");
+  const [selectedConfigKey, setSelectedConfigKey] = useState("");
+  const [pgHosts, setPgHosts] = useState([]);
   const [reportSummary, setReportSummary] = useState({
     errors: 0,
     inconsistencies: 0,
     warnings: 0,
   });
   const [isGenerating, setIsGenerating] = useState(false);
-  // const [isFetchingDatabases, setIsFetchingDatabases] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
 
-  // const fetchDatabases = async () => {
-  //   if (!pgHost || !port) {
-  //     setErrorMessage("Please enter the PostgreSQL host and port.");
-  //     return;
-  //   }
+  useEffect(() => {
+    const fetchPgHostsAndPorts = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/get-server-config"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const pgHostsAndPorts = data.pg_hosts_and_ports || [];
+          setPgHosts(pgHostsAndPorts);
+          if (pgHostsAndPorts.length > 0) {
+            setSelectedHost(pgHostsAndPorts[0].pg_host || "");
+            // setSelectedPort(pgHostsAndPorts[0].port || "");
+            setSelectedConfigKey(pgHostsAndPorts[0].config_key || "");
+          }
+        } else {
+          alert("Failed to fetch server configurations.");
+        }
+      } catch (error) {
+        alert(`Unexpected error: ${error.message}`);
+      }
+    };
 
-  //   setIsFetchingDatabases(true);
-  //   setErrorMessage("");
-  //   try {
-  //     const response = await fetch("http://localhost:5000/api/get-databases", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ pg_host: pgHost, port: port }),
-  //     });
-
-  //     if (response.ok) {
-  //       const result = await response.json();
-  //       if (result.status === "success") {
-  //         setDatabases(result.databases || []);
-  //       } else {
-  //         setErrorMessage(`Error fetching databases: ${result.message}`);
-  //       }
-  //     } else {
-  //       const error = await response.json();
-  //       setErrorMessage(`Error: ${error.message}`);
-  //     }
-  //   } catch (error) {
-  //     setErrorMessage(`Unexpected error: ${error.message}`);
-  //   } finally {
-  //     setIsFetchingDatabases(false);
-  //   }
-  // };
+    fetchPgHostsAndPorts();
+  }, []);
 
   const handleGenerateReport = async () => {
-    // if (!selectedDatabase) {
-    //   setErrorMessage("Please select a database.");
-    //   return;
-    // }
-
-    if (!pgHost || !port) {
-      setErrorMessage("Please enter the PostgreSQL host and port.");
-      return;
-    }
-
     setIsGenerating(true);
     setErrorMessage("");
     setReportGenerated(false);
@@ -79,9 +62,8 @@ function CatalogCheck() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            // database: selectedDatabase,
-            pg_host: pgHost,
-            port: port,
+            pg_host: selectedHost,
+            config_key: selectedConfigKey,
           }),
         }
       );
@@ -134,75 +116,27 @@ function CatalogCheck() {
           </p>
         )}
 
-        {/* PostgreSQL Host Input */}
-        <div className="mb-6">
-          <label
-            htmlFor="pgHost"
-            className="block text-gray-700 font-semibold mb-2"
-          >
-            PostgreSQL Host (pg_host):
+        <div className="my-6">
+          <label className="block text-gray-700 font-semibold mb-2">
+            Select Recovery Host
           </label>
-          <input
-            id="pgHost"
-            type="text"
-            value={pgHost}
-            onChange={(e) => setPgHost(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Enter PostgreSQL host"
-          />
-        </div>
-
-        {/* Port Input */}
-        <div className="mb-6">
-          <label
-            htmlFor="port"
-            className="block text-gray-700 font-semibold mb-2"
+          <select
+            value={`${selectedHost}:${selectedConfigKey}`}
+            onChange={(e) => {
+              const [host, config_key] = e.target.value.split(":");
+              setSelectedHost(host);
+              setSelectedConfigKey(config_key);
+            }}
+            className="w-full border border-gray-300 rounded-lg py-2 px-4"
           >
-            Port:
-          </label>
-          <input
-            id="port"
-            type="text"
-            value={port}
-            onChange={(e) => setPort(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Enter Port"
-          />
+            <option value="">-- Select a Host --</option>
+            {pgHosts.map((host, index) => (
+              <option key={index} value={`${host.pg_host}:${host.config_key}`}>
+                {host.pg_host} : {host.config_key}
+              </option>
+            ))}
+          </select>
         </div>
-
-        {/* Fetch Databases Button */}
-        {/* <button
-          onClick={fetchDatabases}
-          className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition duration-300"
-          disabled={isFetchingDatabases}
-        >
-          {isFetchingDatabases ? "Fetching Databases..." : "Fetch Databases"}
-        </button> */}
-
-        {/* Select Database */}
-        {/* {databases.length > 0 && (
-          <div className="mt-6">
-            <label
-              htmlFor="database"
-              className="block text-gray-700 font-semibold mb-2"
-            >
-              Select Database:
-            </label>
-            <select
-              id="database"
-              value={selectedDatabase}
-              onChange={(e) => setSelectedDatabase(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg py-2 px-4 focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="">-- Select a Database --</option>
-              {databases.map((db, index) => (
-                <option key={index} value={db}>
-                  {db}
-                </option>
-              ))}
-            </select>
-          </div>
-        )} */}
 
         {/* Generate Report Button */}
         {/* {databases.length > 0 && ( */}

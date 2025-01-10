@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, send_file
+# from utils.recovery_manager import get_port_by_config_key
 from utils.pg_catcheck import  convert_log_to_pdf,get_databases,run_pg_catcheck_via_ssh # Import updated utilities
 import io
 from config import DATABASE_CONFIG, SERVER_CONFIG
@@ -27,25 +28,27 @@ def pg_catcheck():
     ssh_user = data.get("ssh_user")
     ssh_password = data.get("ssh_password")
     pg_host = request.json.get("pg_host")
-    port = request.json.get("port")
-    # user = data.get("user")
-    # database = request.json.get("database")
-    # pg_password = data.get("pg_password")
     
-    # Iterate through all database configurations in SERVER_CONFIG
-    for db_config in SERVER_CONFIG.values():
-        print(db_config["port"])
-        # Check if the recovery_host matches the pg_host of the current db_config
-        if db_config["port"] == port:
-            # return db_config.get("base_path")
-            user = db_config.get("user")
-            database = db_config.get("database")
-            pg_password = db_config.get("pg_password")
+    config_key = request.json.get("config_key")
+    
+    config = SERVER_CONFIG.get(config_key)
+        
+    # Check if the config exists and return the port
+    if config:
+        user = config.get("user")
+        # print(f"user : {user}")
+        database = config.get("database")
+        pg_password = config.get("pg_password")
+        port = config.get("port")
+    else:
+        return f"Config key '{config_key}' not found."
  
     # Validate required parameters
     if not all([ssh_host, ssh_user, ssh_password, pg_host, port, user, database, pg_password]):
         print("Missing required parameters in the request. (catcheck.py)")
         return jsonify({"status": "error", "message": "Missing required parameters"}), 400
+    
+    print("Hello")
  
     # Run the pg_catcheck command via SSH
     try:
@@ -104,58 +107,3 @@ def generate_pdf():
     except Exception as e:
         print(f"Error generating PDF: {str(e)} (catcheck.py)")
         return jsonify({"status": "error", "message": str(e)}), 500
- 
- 
-# @catcheck_blueprint.route('/get-databases', methods=['POST'])
-# def databse_pg_catcheck():
-#     """
-#     API endpoint to run the pg_catcheck command via SSH.
-#     """
-#     global latest_output  # Use global variable to store output for the PDF generation
- 
-#     print("Received request to run pg_catcheck. (catcheck.py)")
- 
-#     data = DATABASE_CONFIG
-#     print(f"Request payload: {data} (catcheck.py)")
- 
-#     # Extract parameters from the request
-#     ssh_host = data.get("ssh_host")
-#     ssh_user = data.get("ssh_user")
-#     ssh_password = data.get("ssh_password")
-#     pg_host = request.json.get("pg_host")
-#     port = request.json.get("port")
-    
-#     # Iterate through all database configurations in SERVER_CONFIG
-#     for db_config in SERVER_CONFIG.values():
-#         print(db_config["port"])
-#         # Check if the recovery_host matches the pg_host of the current db_config
-#         if db_config["port"] == port:
-#             # return db_config.get("base_path")
-#             user = db_config.get("user")
-#             pg_password = db_config.get("pg_password")
-    
-#     # Validate required parameters
-#     if not all([ssh_host, ssh_user, ssh_password, pg_host, port, user, pg_password]):
-#         print("Missing required parameters in the request. (catcheck.py)")
-#         return jsonify({"status": "error", "message": "Missing required parameters"}), 400
- 
-#     # Run the pg_catcheck command via SSH
-#     try:
-#         print("get-databse.. (catcheck.py)")
-#         result = get_databases(
-#             host=ssh_host,
-#             ssh_user=ssh_user,
-#             ssh_password=ssh_password,
-#             pg_host=pg_host,
-#             port=port,
-#             user=user,
-#             pg_password=pg_password
-#         )
-#         print("pg_catcheck command executed successfully. (catcheck.py)")
- 
-#         # Save the output for PDF generation
- 
-#         return  jsonify({"status": "success", "databases": result}), 200
-#     except Exception as e:
-#         print(f"Error running pg_catcheck: {str(e)} (catcheck.py)")
-#         return jsonify({"status": "error", "message": str(e)}), 500

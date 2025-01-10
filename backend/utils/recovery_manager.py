@@ -301,3 +301,17 @@ def switch_primary_database(ssh_host, ssh_user, ssh_password, recovery_host, rec
     except Exception as e:
         print(f"Error in run_full_process_with_wal_file: {str(e)}")
         return {"status": "error", "message": str(e)}
+    
+def get_port_by_config_key(config_key):
+    """Fetch the port for the given config_key from SERVER_CONFIG."""
+    try:
+        # Retrieve the configuration using the provided config_key
+        config = SERVER_CONFIG.get(config_key)
+        
+        # Check if the config exists and return the port
+        if config:
+            return config.get("port")
+        else:
+            return f"Config key '{config_key}' not found."
+    except Exception as e:
+        return f"Error occurred: {str(e)}"

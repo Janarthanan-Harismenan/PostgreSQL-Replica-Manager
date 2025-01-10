@@ -11,7 +11,7 @@ DATABASE_CONFIG = {
 }
 
 SERVER_CONFIG = {
-    "DATABASE_CONFIG_1" : {
+    "10 Mins Delay" : {
     "ssh_host": "172.20.224.175",  # SSH server IP
     "ssh_user": "devuser",  # SSH username
     "ssh_password": "dev@cmb123",  # SSH password
@@ -22,7 +22,7 @@ SERVER_CONFIG = {
     "pg_password": "password",  # PostgreSQL password
     "base_path" : "/u01/edb/as15/data"
     },
-    "DATABASE_CONFIG_2" : {
+    "2 Hrs Delay" : {
     "ssh_host": "172.20.224.175",  # SSH server IP
     "ssh_user": "devuser",  # SSH username
     "ssh_password": "dev@cmb123",  # SSH password
@@ -33,7 +33,7 @@ SERVER_CONFIG = {
     "pg_password": "password",  # PostgreSQL password
     "base_path" : "/u01/edb/as15/data"
     },
-    "DATABASE_CONFIG_3" : {
+    "24 Hrs Delay" : {
     "ssh_host": "172.20.224.175",  # SSH server IP
     "ssh_user": "devuser",  # SSH username
     "ssh_password": "dev@cmb123",  # SSH password
