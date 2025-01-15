@@ -1,7 +1,10 @@
+import jwt
+import datetime
 from flask import Blueprint, request, jsonify
 from utils.user_handler import load_users, save_users, hash_password, verify_password
  
 auth_blueprint = Blueprint("auth", __name__)
+SECRET_KEY = "123456789"  # Replace with an environment variable
  
 @auth_blueprint.route("/signup", methods=["POST"])
 def signup():
@@ -45,4 +48,27 @@ def login():
     if not verify_password(password, users[email]["password"]):
         return jsonify({"message": "Incorrect password!"}), 401
  
-    return jsonify({"message": "Login successful!"}), 200
+    # Generate JWT token
+    token = jwt.encode(
+        {
+            "email": email,
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes= 1)
+        },
+        SECRET_KEY,
+        algorithm="HS256",
+    )
+    return jsonify({"message": "Login successful!", "token": token}), 200
+ 
+@auth_blueprint.route("/protected", methods=["GET"])
+def protected():
+    token = request.headers.get("Authorization")
+    if not token:
+        return jsonify({"message": "Token is missing!"}), 401
+ 
+    try:
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return jsonify({"message": f"Welcome {decoded['email']}!"}), 200
+    except jwt.ExpiredSignatureError:
+        return jsonify({"message": "Token has expired!"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"message": "Invalid token!"}), 401

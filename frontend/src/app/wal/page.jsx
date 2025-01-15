@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import useAuth from "../Hooks/useAuth"; // Adjust the path to where `useAuth` is located
 
 function WALChecker() {
   const [searchWord, setSearchWord] = useState("");
+  const { isAuthChecked, isAuthenticated } = useAuth(); // Use the authentication hook
   const [numFiles, setNumFiles] = useState("");
   const [resultFiles, setResultFiles] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -15,8 +17,32 @@ function WALChecker() {
   const [hasSearched, setHasSearched] = useState(false); // To track if search has been initiated
   const router = useRouter();
 
+  // Redirect to login if not authenticated after auth check
+  useEffect(() => {
+    if (isAuthChecked && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthChecked, isAuthenticated, router]);
+
   // Fetch paths from the backend
   useEffect(() => {
+    // const fetchPaths = async () => {
+    //   try {
+    //     const response = await fetch(
+    //       "http://localhost:5000/api/get-path-config"
+    //     );
+    //     if (response.ok) {
+    //       const data = await response.json();
+    //       setPaths(data.paths || []);
+    //       setSelectedPath(data.paths?.[0] || ""); // Default to the first path
+    //     } else {
+    //       setErrorMessage("Failed to fetch paths from the server.");
+    //     }
+    //   } catch (error) {
+    //     setErrorMessage(`Unexpected error: ${error.message}`);
+    //   }
+    // };
+
     const fetchPaths = async () => {
       try {
         const response = await fetch(
@@ -35,7 +61,7 @@ function WALChecker() {
     };
 
     fetchPaths();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleSearch = async () => {
     if (!searchWord || !numFiles || !selectedPath) {
@@ -88,7 +114,20 @@ function WALChecker() {
     setSelectedFileDetails(file);
   };
 
-  return (
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-white border-opacity-75"></div>
+          <p className="text-white font-semibold mt-4 text-lg">
+            Checking authentication...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return isAuthenticated ? (
     <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-4xl">
         <h1 className="text-4xl font-bold text-blue-600 text-center mb-6">
@@ -262,7 +301,7 @@ function WALChecker() {
         </div>
       </div>
     </div>
-  );
+  ) : null;
 }
 
 export default WALChecker;

@@ -1,5 +1,5 @@
 "use client";
- 
+
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -9,21 +9,21 @@ import {
   FaRegEnvelope,
 } from "react-icons/fa";
 import { MdLockOutline } from "react-icons/md";
- 
+
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false); // Handle loading state
   const router = useRouter(); // Initialize useRouter
- 
+
   const handleSignIn = async () => {
     if (!email || !password) {
       alert("Please enter both email and password!");
       return;
     }
- 
+
     setLoading(true); // Start loading
- 
+
     try {
       const response = await fetch("http://localhost:5000/api/login", {
         method: "POST",
@@ -32,9 +32,10 @@ function LoginPage() {
         },
         body: JSON.stringify({ email, password }),
       });
- 
+
       if (response.ok) {
         const data = await response.json();
+        localStorage.setItem("token", data.token); // Save the token to localStorage
         alert(data.message); // Show success message
         router.push("/"); // Redirect to dashboard or home
       } else {
@@ -48,11 +49,44 @@ function LoginPage() {
       setLoading(false); // Stop loading
     }
   };
- 
+
+  // const handleSignIn = async () => {
+  //   if (!email || !password) {
+  //     alert("Please enter both email and password!");
+  //     return;
+  //   }
+
+  //   setLoading(true); // Start loading
+
+  //   try {
+  //     const response = await fetch("http://localhost:5000/api/login", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ email, password }),
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       alert(data.message); // Show success message
+  //       router.push("/"); // Redirect to dashboard or home
+  //     } else {
+  //       const errorData = await response.json();
+  //       alert(`Login failed: ${errorData.message}`);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error connecting to backend:", error);
+  //     alert("An error occurred. Please try again.");
+  //   } finally {
+  //     setLoading(false); // Stop loading
+  //   }
+  // };
+
   const handleSignup = () => {
     router.push("/signup"); // Navigate to the signup page
   };
- 
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 bg-blue-100">
       <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
@@ -136,7 +170,7 @@ function LoginPage() {
               </button>
             </div>
           </div>
- 
+
           {/* Signup Section */}
           <div className="w-2/5 bg-blue-700 text-white rounded-tr-2xl rounded-br-2xl py-36 px-12">
             <h2 className="text-3xl font-bold mb-2">New Here?</h2>
@@ -154,5 +188,5 @@ function LoginPage() {
     </div>
   );
 }
- 
+
 export default LoginPage;

@@ -15,6 +15,7 @@
     "@mui/material": "^6.1.10",
     "axios": "^1.7.9",
     "next": "15.0.4",
+    "papaparse": "^5.5.1",
     "react": "^19.0.0",
     "react-datepicker": "^7.6.0",
     "react-dom": "^19.0.0",

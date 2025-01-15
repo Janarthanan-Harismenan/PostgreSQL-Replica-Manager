@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import useAuth from "../Hooks/useAuth"; // Adjust the path to where `useAuth` is located
 
 function CatalogCheck() {
+  const { isAuthChecked, isAuthenticated } = useAuth(); // Use the authentication hook
   const [pgHost, setPgHost] = useState("");
   const [port, setPort] = useState("5432"); // Default port
   const [databases, setDatabases] = useState([]);
-  // const [selectedDatabase, setSelectedDatabase] = useState("");
   const [reportGenerated, setReportGenerated] = useState(false);
   const [reportUrl, setReportUrl] = useState("");
   const [selectedHost, setSelectedHost] = useState("");
@@ -23,6 +24,15 @@ function CatalogCheck() {
   const router = useRouter();
 
   useEffect(() => {
+    // Redirect to login if not authenticated after auth check
+    if (isAuthChecked && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthChecked, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return; // Skip fetching if not authenticated
+
     const fetchPgHostsAndPorts = async () => {
       try {
         const response = await fetch(
@@ -34,7 +44,6 @@ function CatalogCheck() {
           setPgHosts(pgHostsAndPorts);
           if (pgHostsAndPorts.length > 0) {
             setSelectedHost(pgHostsAndPorts[0].pg_host || "");
-            // setSelectedPort(pgHostsAndPorts[0].port || "");
             setSelectedConfigKey(pgHostsAndPorts[0].config_key || "");
           }
         } else {
@@ -46,9 +55,10 @@ function CatalogCheck() {
     };
 
     fetchPgHostsAndPorts();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleGenerateReport = async () => {
+    if (!isAuthenticated) return; // Skip action if not authenticated
     setIsGenerating(true);
     setErrorMessage("");
     setReportGenerated(false);
@@ -102,14 +112,30 @@ function CatalogCheck() {
     }
   };
 
-  return (
+  // if (!isAuthChecked) {
+  //   return <p>Loading...</p>; // Optional loading state while checking auth
+  // }
+
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-white border-opacity-75"></div>
+          <p className="text-white font-semibold mt-4 text-lg">
+            Checking authentication...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return isAuthenticated ? (
     <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center p-6">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-4xl">
         <h1 className="text-4xl font-bold text-blue-600 text-center mb-8">
           Catalog Check
         </h1>
 
-        {/* Error Message */}
         {errorMessage && (
           <p className="text-red-500 text-center mb-4" aria-live="assertive">
             {errorMessage}
@@ -138,8 +164,6 @@ function CatalogCheck() {
           </select>
         </div>
 
-        {/* Generate Report Button */}
-        {/* {databases.length > 0 && ( */}
         <button
           onClick={handleGenerateReport}
           className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 mt-6"
@@ -147,9 +171,7 @@ function CatalogCheck() {
         >
           {isGenerating ? "Generating Report..." : "Generate Report"}
         </button>
-        {/* )} */}
 
-        {/* Report Summary */}
         {reportGenerated && (
           <div className="mt-6 text-center">
             <p className="text-green-500 font-semibold mb-4">Report Summary:</p>
@@ -176,7 +198,6 @@ function CatalogCheck() {
           </div>
         )}
 
-        {/* Back to Home Button */}
         <div className="mt-6">
           <button
             onClick={() => router.push("/")}
@@ -187,7 +208,7 @@ function CatalogCheck() {
         </div>
       </div>
     </div>
-  );
+  ) : null;
 }
 
 export default CatalogCheck;
