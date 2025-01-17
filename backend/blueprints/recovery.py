@@ -17,7 +17,6 @@ def start_recovery_process():
     data = request.json
 
     # Extract parameters from the request
-    # Extract parameters from the request
     recovery_host = data.get("recovery_host")
     recovery_method = data.get("recovery_method")
     wal_file_name = data.get("wal_file_name")  # WAL file name (if recovery method is WAL)
@@ -92,28 +91,6 @@ def start_recovery_process():
         print(f"Error during recovery: {e}")
         return jsonify({"status": "error", "message": f"An error occurred during recovery: {str(e)}"}), 500
 
-# @recovery_blueprint.route("/get-server-config", methods=["GET"])
-# def get_server_pg_hosts():
-#     """API route to fetch pg_host addresses from SERVER_CONFIG."""
-#     try:
-#         # Extract all pg_host addresses from SERVER_CONFIG
-#         pg_hosts = [config.get("pg_host") for config in SERVER_CONFIG.values()]
-#         return jsonify({"pg_hosts": pg_hosts}), 200
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
-
-# @recovery_blueprint.route("/get-server-config", methods=["GET"])
-# def get_server_pg_hosts_and_ports():
-#     """API route to fetch pg_host addresses and ports from SERVER_CONFIG."""
-#     try:
-#         # Extract all pg_host addresses and ports from SERVER_CONFIG
-#         pg_hosts_and_ports = [
-#             {"pg_host": config.get("pg_host"), "port": config.get("port")}
-#             for config in SERVER_CONFIG.values()
-#         ]
-#         return jsonify({"pg_hosts_and_ports": pg_hosts_and_ports}), 200
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
 
 @recovery_blueprint.route("/get-server-config", methods=["GET"])
 def get_server_pg_hosts_and_ports():
@@ -138,16 +115,9 @@ def switch_primary():
     """
     API endpoint to make the secondary database the primary one.
     """
-    # data = request.json
-    # secondary_host = data.get("secondary_host")
-    # recovery_database = data.get("recovery_database")
-
-    # if not all([recovery_host, secondary_host, recovery_database]):
-    #     return jsonify({"status": "error", "message": "Missing required parameters"}), 400
     
     data = request.json
 
-    # Extract parameters from the request
     # Extract parameters from the request
     
     ssh_host = DATABASE_CONFIG.get("ssh_host")
@@ -156,9 +126,6 @@ def switch_primary():
     
     recovery_host = data.get("recovery_host")
     config_key = data.get("config_key")
-    
-    # recovery_database = data.get("recovery_database")
-    # recovery_port = data.get("recovery_port")
     recovery_port = get_port_by_config_key(config_key)
     
     if not all([recovery_host]):

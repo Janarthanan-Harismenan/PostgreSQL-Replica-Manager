@@ -60,39 +60,6 @@ def flush_shell_output(shell):
         output += shell.recv(1024).decode()
     return output
  
-# def list_databases_via_shell(shell,port):
-#     """
-#     Lists available databases on the PostgreSQL server via an interactive shell.
-#     """
-#     try:
-#         print("Flushing shell buffer... (pg_catcheck.py)")
-#         flush_shell_output(shell)  # Clear any previous output in the shell
- 
-#         print("Listing available databases (pg_catcheck.py)")
-#         command = f"psql -p {port} -lqt | cut -d \\| -f 1 | tr -d ' ' | grep -v '^$'\n"
-#         shell.send(command)
-#         print("command: ",command)
-#         time.sleep(2)  # Allow some time for the command to execute and output to be generated
- 
-#         # Capture the output for this command only
-#         output = ""
-#         while shell.recv_ready():
-#             output += shell.recv(1024).decode()
- 
-#         # Process the output to filter only valid database names
-#         lines = output.split("\n")
-#         databases = []
-#         for line in lines:
-#             line = line.strip()
-#             if re.match(r"^[a-zA-Z0-9_]+$", line):  # Match valid database names
-#                 databases.append(line)
- 
-#         print(f"Databases found: {databases} (pg_catcheck.py)")
-#         return databases
- 
-#     except Exception as e:
-#         print(f"Error while listing databases: {str(e)} (pg_catcheck.py)")
-#         return {"status": "error", "message": str(e)} 
  
 def connect(config):
     """
