@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
+import subprocess
+from utils.db_utils import up_to_enterprisedb
 from utils.log_handler import fetch_last_10_logs, search_log_file_for_keyword  # Replace with the actual module containing the function
-from config import DATABASE_CONFIG
+from config import DATABASE_CONFIG, environment
 import os
 
 # Define the logs blueprint
@@ -51,11 +53,16 @@ def fetch_logs():
         ssh_host = DATABASE_CONFIG.get("ssh_host")
         ssh_user = DATABASE_CONFIG.get("ssh_user")
         ssh_password = DATABASE_CONFIG.get("ssh_password")
+        
+        # shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        if environment == "dev" :
+            shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        else :
+            shell = subprocess.Popen(["/bin/bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True )
+        print("Switched to 'enterprisedb' user.")
 
         result = fetch_last_10_logs(
-            host=ssh_host,
-            ssh_user=ssh_user,
-            ssh_password=ssh_password,
+            shell = shell,
             number_of_files=num_files,
         )
 
@@ -96,7 +103,14 @@ def search_content_of_log_file():
         log_file_path = os.path.join(log_directory, log_file_name)
         log_file_path = log_file_path.replace("\\", "/")
         # Search the log file for the keyword
-        matched_lines = search_log_file_for_keyword(ssh_host, ssh_user, ssh_password, log_file_path, keyword)
+        
+        # shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        if environment == "dev" :
+            shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        else :
+            shell = subprocess.Popen(["/bin/bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True )
+        print("Switched to 'enterprisedb' user.")
+        matched_lines = search_log_file_for_keyword(shell, log_file_path, keyword)
  
         return jsonify({"status": "success", "matched_lines": matched_lines})
  

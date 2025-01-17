@@ -55,6 +55,12 @@ LOG_PATH_CONFIG = {
     "log_base_path" : "/u01/edb/as15/data/log"
 }
 
+environment = "dev"
+# environment = "prod"
+
+MAX_FILE_SIZE_MB = 2  # Maximum file size in MB
+INTERVAL_SECONDS = 10  # Interval to fetch status
+
 # CONFIG_FILE_PATH_CONFIG = {
 #     "edb" : "/u01/edb/as15/data"
 # }

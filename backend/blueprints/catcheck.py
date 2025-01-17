@@ -1,8 +1,10 @@
+import subprocess
 from flask import Blueprint, request, jsonify, send_file
 # from utils.recovery_manager import get_port_by_config_key
-from utils.pg_catcheck import  convert_log_to_pdf,get_databases,run_pg_catcheck_via_ssh # Import updated utilities
+from utils.db_utils import up_to_enterprisedb
+from utils.pg_catcheck import  convert_log_to_pdf, run_pg_catcheck_via_ssh # Import updated utilities
 import io
-from config import DATABASE_CONFIG, SERVER_CONFIG
+from config import DATABASE_CONFIG, SERVER_CONFIG, environment
  
 # Define the catcheck blueprint
 catcheck_blueprint = Blueprint('catcheck', __name__)
@@ -53,10 +55,14 @@ def pg_catcheck():
     # Run the pg_catcheck command via SSH
     try:
         print("Running pg_catcheck command via SSH... (catcheck.py)")
+        if environment == "dev" :
+            shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        else :
+            shell = subprocess.Popen(["/bin/bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        print("Switched to 'enterprisedb' user.")
         result = run_pg_catcheck_via_ssh(
-            host=ssh_host,
-            ssh_user=ssh_user,
-            ssh_password=ssh_password,
+            shell = shell,
             pg_host=pg_host,
             port=port,
             user=user,

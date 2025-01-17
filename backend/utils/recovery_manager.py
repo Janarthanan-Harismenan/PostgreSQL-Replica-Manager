@@ -171,28 +171,9 @@ def get_the_path(recovery_port):
         print(f"Error in get_the_path: {str(e)}")
         raise
 
-def run_full_process_with_recovery_time(recovery_time, ssh_host, recovery_host, ssh_user, ssh_password,recovery_port):
+def run_full_process_with_recovery_time(recovery_time, recovery_host, shell, recovery_port):
     try:
-        print(f"Executing run_full_process_with_recovery_time with host={ssh_host}, user={ssh_user}, recovery_time={recovery_time}")
-
         base_path = get_the_path(recovery_port)
-        # base_path = "/u01/edb/as15/data"
-        # f"sed -i \"s/^\\(recovery_target_time =.*\\)/#\\1/\" /u01/edb/as15/data/postgresql.conf"
-
-        # Connect to the server via SSH
-        ssh = connect_via_ssh(ssh_host, ssh_user, ssh_password)
-        print("SSH connection established.")
-        shell = ssh.invoke_shell()
-
-        # # Log file path
-        # log_file_path = os.path.join(PATH_CONFIG["blueprints_directory"], "shell_commands.log")
-
-        # Switch to root and then to the EnterpriseDB user
-        switch_to_root(shell, ssh_password)
-        print("Switched to root user.")
-
-        switch_to_enterprisedb(shell)
-        print("Switched to enterprisedb user.")
 
         # switch_to_server(shell)
         switch_to_server(shell, recovery_host)
@@ -208,7 +189,7 @@ def run_full_process_with_recovery_time(recovery_time, ssh_host, recovery_host, 
 
         # Close SSH session
         shell.close()
-        ssh.close()
+        # ssh.close()
         print("SSH connection closed.")
 
         return {"status": "success", "message": "Recovery process completed successfully."}
@@ -217,26 +198,14 @@ def run_full_process_with_recovery_time(recovery_time, ssh_host, recovery_host, 
         print(f"Error in run_full_process_with_recovery_time: {str(e)}")
         return {"status": "error", "message": str(e)}
 
-def run_full_process_with_wal_file(wal_file_name, ssh_host, recovery_host, ssh_user, ssh_password, recovery_port):
+def run_full_process_with_wal_file(wal_file_name, recovery_host, shell, recovery_port):
     try:
-        print(f"Executing run_full_process_with_wal_file with host={ssh_host}, user={ssh_user}, wal_file_name={wal_file_name}")
-
-        # Connect to the server via SSH
-        ssh = connect_via_ssh(ssh_host, ssh_user, ssh_password)
-        print("SSH connection established.")
-        shell = ssh.invoke_shell()
+        # print(f"Executing run_full_process_with_wal_file with host={ssh_host}, user={ssh_user}, wal_file_name={wal_file_name}")
         
         base_path = get_the_path(recovery_port)
 
         # Log file path
         # log_file_path = os.path.join(PATH_CONFIG["blueprints_directory"], "shell_commands.log")
-
-        # Switch to root and then to the EnterpriseDB user
-        switch_to_root(shell, ssh_password)
-        print("Switched to root user.")
-
-        switch_to_enterprisedb(shell)
-        print("Switched to enterprisedb user.")
         
         switch_to_server(shell, recovery_host)
 
@@ -251,7 +220,7 @@ def run_full_process_with_wal_file(wal_file_name, ssh_host, recovery_host, ssh_u
 
         # Close SSH session
         shell.close()
-        ssh.close()
+        # ssh.close()
         print("SSH connection closed.")
 
         return {"status": "success", "message": "WAL recovery process completed successfully."}
@@ -260,26 +229,11 @@ def run_full_process_with_wal_file(wal_file_name, ssh_host, recovery_host, ssh_u
         print(f"Error in run_full_process_with_wal_file: {str(e)}")
         return {"status": "error", "message": str(e)}
     
-def switch_primary_database(ssh_host, ssh_user, ssh_password, recovery_host, recovery_port):
+def switch_primary_database(shell, recovery_host, recovery_port):
     try:
         # print(f"Executing run_full_process_with_wal_file with host={ssh_host}, user={ssh_user}, wal_file_name={wal_file_name}")
-
-        # Connect to the server via SSH
-        ssh = connect_via_ssh(ssh_host, ssh_user, ssh_password)
-        print("SSH connection established.")
-        shell = ssh.invoke_shell()
         
         base_path = get_the_path(recovery_port)
-
-        # Log file path
-        # log_file_path = os.path.join(PATH_CONFIG["blueprints_directory"], "shell_commands.log")
-
-        # Switch to root and then to the EnterpriseDB user
-        switch_to_root(shell, ssh_password)
-        print("Switched to root user.")
-
-        switch_to_enterprisedb(shell)
-        print("Switched to enterprisedb user.")
         
         switch_to_server(shell, recovery_host)
         
@@ -293,7 +247,7 @@ def switch_primary_database(ssh_host, ssh_user, ssh_password, recovery_host, rec
 
         # Close SSH session
         shell.close()
-        ssh.close()
+        # ssh.close()
         print("SSH connection closed.")
 
         return {"status": "success", "message": "Database Switching process completed successfully."}

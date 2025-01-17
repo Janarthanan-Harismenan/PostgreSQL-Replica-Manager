@@ -4,7 +4,7 @@ import subprocess
 import time
 import re
 import json
-from utils.db_utils import switch_to_root, connect_via_ssh, switch_to_enterprisedb, flush_shell_output
+from utils.db_utils import flush_shell_output
 from config import PATH_CONFIG
 
 def remove_color_codes(text):
@@ -311,18 +311,11 @@ def match_database_with_dir(extracted_content, database_details):
         "unmatched_directories": extracted_content
     }
 
-def run_full_process(host, ssh_user, ssh_password, keyword, number_of_files, selected_path, wal_file_name=None):
+def run_full_process(shell, keyword, number_of_files, selected_path, wal_file_name=None):
     """
     Orchestrates the full process of fetching WAL files and searching for a keyword.
     """
     try:
-        ssh = connect_via_ssh(host, ssh_user, ssh_password)
-        shell = ssh.invoke_shell()
-
-        switch_to_root(shell, ssh_password)
-        
-        switch_to_enterprisedb(shell)
-
         base_path = selected_path
 
         matched_files = search_wal_files_and_content_for_keyword(shell, base_path, keyword, number_of_files)
@@ -336,7 +329,7 @@ def run_full_process(host, ssh_user, ssh_password, keyword, number_of_files, sel
             file["db_info"] = db_match
 
         shell.close()
-        ssh.close()
+        # ssh.close()
         
         # matched_files = matched_files[1:]
 

@@ -67,8 +67,12 @@ import time
 import requests
 import csv
 import os
+import subprocess
  
 # Import blueprints
+# from utils.db_utils import up_to_enterprisedb
+# from config import DATABASE_CONFIG, environment
+
 from blueprints.replica import replica_blueprint
 from blueprints.recovery import recovery_blueprint
 from blueprints.catcheck import catcheck_blueprint
@@ -118,21 +122,7 @@ def create_app():
             "message": str(e),
         }
         return jsonify(response), 500
- 
-    # # Route to serve the CSV file
-    # @app.route('/api/static/replica_status', methods=['GET'])
-    # def serve_csv():
-    #     """Serve the replica status CSV file."""
-    #     try:
-    #         return send_from_directory(
-    #             os.path.join(app.root_path, 'static'),  # Path to static folder
-    #             'replica_status.csv',                   # File to serve
-    #             mimetype='text/csv'                     # Correct mime type for CSV
-    #         )
-    #     except Exception as e:
-    #         app.logger.error(f"Error serving CSV: {e}")
-    #         return jsonify({"error": "Failed to fetch CSV file"}), 500
- 
+    
     # Start background thread for periodic API calls
     threading.Thread(target=fetch_replica_status, daemon=True).start()
  

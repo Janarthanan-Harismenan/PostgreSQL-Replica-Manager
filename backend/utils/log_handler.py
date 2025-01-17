@@ -1,7 +1,7 @@
 import os
 import shlex
-import subprocess
-from utils.db_utils import flush_shell_output, switch_to_enterprisedb, switch_to_root, connect_via_ssh
+# import subprocess
+from utils.db_utils import flush_shell_output
 import time
 import re
 from config import LOG_PATH_CONFIG
@@ -62,7 +62,7 @@ def get_last_modified_log_files(shell, base_path, number_of_files=10, timeout=30
         print(f"Error in get_last_modified_log_files: {str(e)}")
         raise e
  
-def fetch_last_10_logs(host, ssh_user, ssh_password, number_of_files=10):
+def fetch_last_10_logs(shell, number_of_files=10):
     """
     Orchestrates the process of fetching the last N modified log files from a remote server.
  
@@ -76,16 +76,6 @@ def fetch_last_10_logs(host, ssh_user, ssh_password, number_of_files=10):
         dict: A dictionary with the status and the list of log files.
     """
     try:
-        print(f"Executing fetch_last_10_logs with host={host}, user={ssh_user}")
-        ssh = connect_via_ssh(host, ssh_user, ssh_password)
-        print("SSH connection established.")
-        shell = ssh.invoke_shell()
-
-        switch_to_root(shell, ssh_password)
-        print("Switched to root user.")
-        switch_to_enterprisedb(shell)
-        print("Switched to 'enterprisedb' user.")
-        
         base_path = LOG_PATH_CONFIG.get("log_base_path")
         
         # Specify the log directory path
@@ -95,7 +85,7 @@ def fetch_last_10_logs(host, ssh_user, ssh_password, number_of_files=10):
         log_files = get_last_modified_log_files(shell, base_path, number_of_files=number_of_files)
 
         shell.close()
-        ssh.close()
+        # ssh.close()
         print("SSH connection closed.")
 
         if log_files:
@@ -107,7 +97,7 @@ def fetch_last_10_logs(host, ssh_user, ssh_password, number_of_files=10):
         print(f"Error in fetch_last_10_logs: {str(e)}")
         return {"status": "error", "message": str(e)}
  
-def search_log_file_for_keyword(ssh_host, ssh_user, ssh_password, log_file_path, keyword, context_lines=5, timeout=30):
+def search_log_file_for_keyword(shell, log_file_path, keyword, context_lines=5, timeout=30):
     """
     Searches a log file for a given keyword and retrieves matched lines with context.
    
@@ -127,16 +117,7 @@ def search_log_file_for_keyword(ssh_host, ssh_user, ssh_password, log_file_path,
     try:
         if not keyword.strip():
             raise ValueError("Keyword cannot be empty or whitespace.")
- 
-        ssh = connect_via_ssh(ssh_host, ssh_user, ssh_password)
-        print("SSH connection established.")
-        shell = ssh.invoke_shell()
- 
-        switch_to_root(shell, ssh_password)
-        print("Switched to root user.")
-        switch_to_enterprisedb(shell)
-        print("Switched to 'enterprisedb' user.")
- 
+        
         escaped_keyword = shlex.quote(keyword.strip())
         grep_command = f"grep -n '{escaped_keyword}' {log_file_path}\n"
  
@@ -211,7 +192,7 @@ def search_log_file_for_keyword(ssh_host, ssh_user, ssh_password, log_file_path,
             results.append([content, before_context, after_context])
  
         shell.close()
-        ssh.close()
+        # ssh.close()
  
         print("Results with context retrieved successfully.")
         return results

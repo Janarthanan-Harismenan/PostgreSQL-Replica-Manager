@@ -2,24 +2,24 @@ import time
 import re
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from utils.db_utils import connect_via_ssh, switch_to_root, switch_to_enterprisedb, switch_to_server,list_databases_via_shell
+from utils.db_utils import switch_to_server
  
-def run_pg_catcheck_via_ssh(host, ssh_user, ssh_password, pg_host, port, user, database, pg_password):
+def run_pg_catcheck_via_ssh(shell, pg_host, port, user, database, pg_password):
     """
     Orchestrates the SSH connection, user switching, and `pg_catcheck` execution.
     """
     try:
         print("Starting pg_catcheck process... (pg_catcheck.py)")
-        ssh = connect_via_ssh(host, ssh_user, ssh_password)
-        shell = ssh.invoke_shell()
+        # ssh = connect_via_ssh(host, ssh_user, ssh_password)
+        # shell = ssh.invoke_shell()
  
-        switch_to_root(shell, ssh_password)
-        switch_to_enterprisedb(shell)
+        # switch_to_root(shell, ssh_password)
+        # switch_to_enterprisedb(shell)
         switch_to_server(shell,pg_host)
         output = run_pg_catcheck(shell, pg_host, port, user, database, pg_password)
  
         print("Command execution completed. Closing SSH connection... (pg_catcheck.py)")
-        ssh.close()
+        # ssh.close()
  
         print("Processing results... (pg_catcheck.py)")
         results = extract_results(output)
@@ -68,24 +68,24 @@ def run_pg_catcheck(shell, pg_host, port, user, database, pg_password, timeout=3
  
     return output
     
-def get_databases(host, ssh_user, ssh_password, pg_host, port, user, pg_password):
-    """
-    Orchestrates the SSH connection, user switching, and `pg_catcheck` execution.
-    """
-    try:
-        print("Starting pg_catcheck process... (pg_catcheck.py)")
-        ssh = connect_via_ssh(host, ssh_user, ssh_password)
-        shell = ssh.invoke_shell()
+# def get_databases(host, ssh_user, ssh_password, pg_host, port, user, pg_password):
+#     """
+#     Orchestrates the SSH connection, user switching, and `pg_catcheck` execution.
+#     """
+#     try:
+#         print("Starting pg_catcheck process... (pg_catcheck.py)")
+#         ssh = connect_via_ssh(host, ssh_user, ssh_password)
+#         shell = ssh.invoke_shell()
  
-        switch_to_root(shell, ssh_password)
-        switch_to_enterprisedb(shell)
-        switch_to_server(shell,pg_host)
-        databases=list_databases_via_shell(shell,port)
-        return databases
+#         switch_to_root(shell, ssh_password)
+#         switch_to_enterprisedb(shell)
+#         switch_to_server(shell,pg_host)
+#         databases=list_databases_via_shell(shell,port)
+#         return databases
  
-    except Exception as e:
-        print(f"Error: {str(e)} (pg_catcheck.py)")
-        return {"status": "error", "message": str(e)}
+#     except Exception as e:
+#         print(f"Error: {str(e)} (pg_catcheck.py)")
+#         return {"status": "error", "message": str(e)}
  
 # def run_pg_catcheck(shell, pg_host, port, user, database, pg_password,timeout=30):
 #     """

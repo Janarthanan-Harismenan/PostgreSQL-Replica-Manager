@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
+from utils.db_utils import up_to_enterprisedb
 from utils.recovery_manager import get_port_by_config_key, run_full_process_with_recovery_time, run_full_process_with_wal_file, switch_primary_database  # Import the function for recovery
-from config import DATABASE_CONFIG, SERVER_CONFIG
+from config import DATABASE_CONFIG, SERVER_CONFIG, environment
+import subprocess
 
 # Define the recovery blueprint
 recovery_blueprint = Blueprint('recovery', __name__)
@@ -45,19 +47,26 @@ def start_recovery_process():
 
     print(f"Request payload: recoveryOption={recovery_host}, recoveryMethod={recovery_method}, "
           f"walFileName={wal_file_name}, recoveryTime={recovery_time}")
+    
+    
 
     try:
+        # shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        if environment == "dev" :
+            shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        else :
+            shell = subprocess.Popen(["/bin/bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True )
+        print("Switched to 'enterprisedb' user.")
+        
         # Call the appropriate recovery function based on the recovery method
         if recovery_method == "WAL":
             # Call the function for WAL recovery
             result = run_full_process_with_wal_file(
                 # recovery_host=recovery_host,
                 wal_file_name=wal_file_name,
-                ssh_host=ssh_host,
                 # pg_host=pg_host,
                 recovery_host =recovery_host,
-                ssh_user=ssh_user,
-                ssh_password=ssh_password,
+                shell = shell,
                 # recovery_database = recovery_database,
                 recovery_port = recovery_port
             )
@@ -67,11 +76,9 @@ def start_recovery_process():
             result = run_full_process_with_recovery_time(
                 # recovery_host=recovery_host,
                 recovery_time=recovery_time,
-                ssh_host=ssh_host,
                 # pg_host=pg_host,
                 recovery_host = recovery_host,
-                ssh_user=ssh_user,
-                ssh_password=ssh_password,
+                shell = shell,
                 # recovery_database = recovery_database,
                 recovery_port = recovery_port
             )
@@ -158,7 +165,13 @@ def switch_primary():
         return jsonify({"status": "error", "message": "Missing required parameters: 'recovery_host' and/or 'recovery_method'"}), 400
 
     try:
-        result = switch_primary_database(ssh_host, ssh_user, ssh_password, recovery_host, recovery_port)
+        # shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        if environment == "dev" :
+            shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        else :
+            shell = subprocess.Popen(["/bin/bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True )
+        print("Switched to 'enterprisedb' user.")
+        result = switch_primary_database(shell, recovery_host, recovery_port)
         return jsonify({"status": "success", "message": result}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": f"An error occurred while switching primary: {str(e)}"}), 500

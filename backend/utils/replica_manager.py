@@ -144,12 +144,11 @@ import requests
 from utils.db_utils import connect_to_db
 from psycopg2.extras import RealDictCursor
 import os
+from config import MAX_FILE_SIZE_MB, INTERVAL_SECONDS
  
 # Configuration for periodic API calls
 API_URL = "http://localhost:5000/api/replica-status"
 CSV_FILE = "static/replica_status.csv"  # Save file in static directory
-MAX_FILE_SIZE_MB = 2  # Maximum file size in MB
-INTERVAL_SECONDS = 10  # Interval to fetch status
  
 def get_last_update_time(conn):
     """

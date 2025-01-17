@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import useAuth from "../Hooks/useAuth";
 import { useRouter } from "next/navigation";
 import ReplicaStatus from "../ReplicaStatus/page";
 import "react-datepicker/dist/react-datepicker.css";
@@ -8,6 +9,7 @@ import ReactDatePicker from "react-datepicker";
 
 function Recovery() {
   const [recoveryMethod, setRecoveryMethod] = useState("");
+  const { isAuthChecked, isAuthenticated } = useAuth(); // Use the authentication hook
   const [selectedHost, setSelectedHost] = useState("");
   // const [selectedPort, setSelectedPort] = useState("");
   const [selectedConfigKey, setSelectedConfigKey] = useState("");
@@ -28,6 +30,13 @@ function Recovery() {
   const router = useRouter();
 
   const recoveryMethods = ["WAL", "Log"];
+
+  // Redirect to login if not authenticated after auth check
+  useEffect(() => {
+    if (isAuthChecked && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthChecked, isAuthenticated, router]);
 
   useEffect(() => {
     const fetchPgHostsAndPorts = async () => {
@@ -214,7 +223,20 @@ function Recovery() {
     }
   };
 
-  return (
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-white border-opacity-75"></div>
+          <p className="text-white font-semibold mt-4 text-lg">
+            Checking authentication...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return isAuthenticated ? (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-4xl">
         <h1 className="text-4xl font-extrabold text-gray-800 mb-6 text-center">
@@ -449,7 +471,7 @@ function Recovery() {
         </div>
       </div>
     </div>
-  );
+  ) : null;
 }
 
 export default Recovery;

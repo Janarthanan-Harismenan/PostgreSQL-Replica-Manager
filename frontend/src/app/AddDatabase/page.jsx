@@ -1,13 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+// import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import useAuth from "../Hooks/useAuth"; // Adjust the path to where `useAuth` is located
 
 function AddDatabase() {
   const [databaseName, setDatabaseName] = useState("");
   const [databaseDir, setDatabaseDir] = useState("");
   const [message, setMessage] = useState("");
+  const { isAuthChecked, isAuthenticated } = useAuth(); // Use the authentication hook
+
   const router = useRouter();
+
+  // Redirect to login if not authenticated after auth check
+  useEffect(() => {
+    if (isAuthChecked && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthChecked, isAuthenticated, router]);
 
   const handleSubmit = async () => {
     if (!databaseName || !databaseDir) {
@@ -39,7 +50,20 @@ function AddDatabase() {
     }
   };
 
-  return (
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-white border-opacity-75"></div>
+          <p className="text-white font-semibold mt-4 text-lg">
+            Checking authentication...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return isAuthenticated ? (
     <div className="min-h-screen bg-blue-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-4xl">
         <h1 className="text-4xl font-bold text-blue-600 text-center mb-6">
@@ -48,7 +72,10 @@ function AddDatabase() {
 
         <div className="space-y-6">
           <div>
-            <label htmlFor="databaseName" className="block text-gray-700 font-semibold mb-2">
+            <label
+              htmlFor="databaseName"
+              className="block text-gray-700 font-semibold mb-2"
+            >
               Database Name:
             </label>
             <input
@@ -62,7 +89,10 @@ function AddDatabase() {
           </div>
 
           <div>
-            <label htmlFor="databaseDir" className="block text-gray-700 font-semibold mb-2">
+            <label
+              htmlFor="databaseDir"
+              className="block text-gray-700 font-semibold mb-2"
+            >
               Database Directory:
             </label>
             <input
@@ -87,7 +117,7 @@ function AddDatabase() {
 
         <button
           onClick={() => router.push("/ShowDatabases")}
-          className="w-full bg-blue-900 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 mt-4"
+          className="w-full bg-yellow-500 text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition duration-300 mt-4"
         >
           Show Database Details
         </button>
@@ -100,7 +130,7 @@ function AddDatabase() {
         </button>
       </div>
     </div>
-  );
+  ) : null;
 }
 
 export default AddDatabase;

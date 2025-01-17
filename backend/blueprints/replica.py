@@ -133,8 +133,9 @@ import os
 # import app
 from flask import Blueprint, jsonify, request, send_from_directory
 from utils.replica_manager import check_replica_paused, check_replica_status, manage_replication
-from config import DATABASE_CONFIG, SERVER_CONFIG
+from config import DATABASE_CONFIG, SERVER_CONFIG, environment
 from utils.db_utils import connect_to_db, close_connections, up_to_enterprisedb
+import subprocess
 import logging
  
 # Flask blueprint
@@ -177,7 +178,11 @@ def get_replica_status():
                 ssh_password = data.get("ssh_password")
                 
                 print("(replica_manager.py) Checking replica status.")
-                shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+                # shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+                if environment == "dev" :
+                    shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+                else :
+                    shell = subprocess.Popen(["/bin/bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True )
                 # Check replica status for the current configuration
                 # delayed_status = check_replica_status(config)  # Assuming this function uses the database connection
                 delayed_status = check_replica_status(shell, config)
@@ -277,7 +282,11 @@ def get_status():
                 ssh_password = data.get("ssh_password")
                 
                 print("(replica_manager.py) Checking replica status.")
-                shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+                # shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+                if environment == "dev" :
+                    shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+                else :
+                    shell = subprocess.Popen(["/bin/bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True )
                 state=check_replica_paused(shell, config)
                 if state:
                     status="paused"
@@ -348,7 +357,11 @@ def manage_replica():
         ssh_password = data.get("ssh_password")
         
         print("(replica_manager.py) Checking replica status.")
-        shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        # shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        if environment == "dev" :
+            shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+        else :
+            shell = subprocess.Popen(["/bin/bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True )
         
         # Connect to the specified server's database
         print("Attempting to establish SSH tunnel and connect to the specified replica database... (replica.py)")

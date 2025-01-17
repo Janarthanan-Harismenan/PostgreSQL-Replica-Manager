@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
+from utils.db_utils import up_to_enterprisedb
 from utils.wal_handler import run_full_process  # Replace with the actual module containing the function
-from config import DATABASE_CONFIG, PATH_CONFIG
+from config import DATABASE_CONFIG, PATH_CONFIG, environment
+import subprocess
  
 # Define the WAL blueprint
 wal_blueprint = Blueprint('wal', __name__)
@@ -29,12 +31,18 @@ def wal_check():
     if not all([keyword, number_of_files, selected_path]):
         print("Missing required parameters in request.")
         return jsonify({"status": "error", "message": "Missing required parameters"}), 400
+    
+    # shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+    if environment == "dev" :
+        shell = up_to_enterprisedb(ssh_host, ssh_user, ssh_password)
+    else :
+        shell = subprocess.Popen(["/bin/bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True )
+        
+    print("Switched to 'enterprisedb' user.")
  
     # Run the process to fetch WAL files and search for the keyword
     result = run_full_process(
-        host=ssh_host,
-        ssh_user=ssh_user,
-        ssh_password=ssh_password,
+        shell = shell,
         keyword=keyword,
         number_of_files=number_of_files,
         selected_path=selected_path,  # Pass the selected path

@@ -27,6 +27,7 @@ function PointFinder() {
   const navigateToHome = () => {
     router.push("/");
   };
+
   if (!isAuthChecked) {
     return (
       <div className="min-h-screen bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center">

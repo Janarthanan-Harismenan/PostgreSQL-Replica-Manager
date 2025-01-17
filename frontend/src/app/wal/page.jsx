@@ -198,7 +198,7 @@ function WALChecker() {
             className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300"
             disabled={isSearching}
           >
-            {isSearching ? "Searching..." : "Search Logs"}
+            {isSearching ? "Searching..." : "Search Wals"}
           </button>
         </div>
 
@@ -291,6 +291,21 @@ function WALChecker() {
         )}
 
         {/* Back to Home Button */}
+        <div className="my-6 flex gap-4">
+          <button
+            onClick={() => router.push("ShowDatabases")}
+            className="w-full bg-yellow-500 text-white py-3 rounded-lg font-semibold shadow-md hover:shadow-lg hover:bg-yellow-600 transition duration-300"
+          >
+            Show Databases
+          </button>
+          <button
+            onClick={() => router.push("AddDatabase")}
+            className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold shadow-md hover:shadow-lg hover:bg-green-600 transition duration-300"
+          >
+            Add Database
+          </button>
+        </div>
+
         <div className="my-6">
           <button
             onClick={() => router.push("/")}
