@@ -98,13 +98,7 @@ const Replica = () => {
         header: false,
       });
 
-      // const lastThreeRows = parsedData.slice(-3).map((row) => ({
-      //   name: row[0], // Assuming the first column is the name
-      //   delay_name: row[1], // Adjust column index if needed
-      //   delay: row[2],
-      // }));
-
-      // return lastThreeRows;
+     
 
       const seenDelayNames = new Set();
       const uniqueRows = [];

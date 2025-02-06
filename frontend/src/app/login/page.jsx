@@ -50,38 +50,7 @@ function LoginPage() {
     }
   };
 
-  // const handleSignIn = async () => {
-  //   if (!email || !password) {
-  //     alert("Please enter both email and password!");
-  //     return;
-  //   }
 
-  //   setLoading(true); // Start loading
-
-  //   try {
-  //     const response = await fetch("http://localhost:5000/api/login", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ email, password }),
-  //     });
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       alert(data.message); // Show success message
-  //       router.push("/"); // Redirect to dashboard or home
-  //     } else {
-  //       const errorData = await response.json();
-  //       alert(`Login failed: ${errorData.message}`);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error connecting to backend:", error);
-  //     alert("An error occurred. Please try again.");
-  //   } finally {
-  //     setLoading(false); // Stop loading
-  //   }
-  // };
 
   const handleSignup = () => {
     router.push("/signup"); // Navigate to the signup page

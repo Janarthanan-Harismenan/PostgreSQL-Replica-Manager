@@ -63,7 +63,6 @@ def flush_shell_output(shell):
     while shell.recv_ready():
         output += shell.recv(1024).decode()
     return output
-
 def connect(config):
     """
     Establish a connection to the PostgreSQL database using a configuration dictionary.

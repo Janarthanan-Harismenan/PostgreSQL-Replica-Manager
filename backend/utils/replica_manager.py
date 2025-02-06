@@ -59,7 +59,6 @@ def check_replica_status(shell, config):
             "delay": None,
             "error": str(e)
         }
-
 def check_replica_paused(shell, config):
     """
     Check if the replication for the delayed database is paused.

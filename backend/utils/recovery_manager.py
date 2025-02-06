@@ -127,31 +127,7 @@ def restart_postgresql_service(shell, log_file_path=None):
         log_shell_output(shell, log_file_path)
     time.sleep(5)
     
-# def get_the_path(recovery_database):
-#     try:
-#         # Check if the recovery_database exists as a key in the config dictionary
-#         if recovery_database in CONFIG_FILE_PATH_CONFIG:
-#             return CONFIG_FILE_PATH_CONFIG[recovery_database]
-#         else:
-#             raise ValueError(f"No path found for recovery database: {recovery_database}")
-#     except Exception as e:
-#         print(f"Error in get_the_path: {str(e)}")
-#         raise
 
-# def get_the_path(recovery_database, recovery_host):
-#     try:
-#         # Iterate through all database configurations in SERVER_CONFIG
-#         for db_config in SERVER_CONFIG.values():
-#             # Check if the recovery_database exists as a key in the CONFIG_FILE_PATH_CONFIG of the current db_config
-#             if recovery_database in db_config.get("CONFIG_FILE_PATH_CONFIG", {}):
-#                 return db_config["CONFIG_FILE_PATH_CONFIG"][recovery_database]
-        
-#         # If the recovery_database wasn't found in any config, raise an error
-#         raise ValueError(f"No path found for recovery database: {recovery_database}")
-
-#     except Exception as e:
-#         print(f"Error in get_the_path: {str(e)}")
-#         raise
 
 def get_the_path(recovery_port):
     try:

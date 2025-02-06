@@ -26,23 +26,6 @@ function WALChecker() {
 
   // Fetch paths from the backend
   useEffect(() => {
-    // const fetchPaths = async () => {
-    //   try {
-    //     const response = await fetch(
-    //       "http://localhost:5000/api/get-path-config"
-    //     );
-    //     if (response.ok) {
-    //       const data = await response.json();
-    //       setPaths(data.paths || []);
-    //       setSelectedPath(data.paths?.[0] || ""); // Default to the first path
-    //     } else {
-    //       setErrorMessage("Failed to fetch paths from the server.");
-    //     }
-    //   } catch (error) {
-    //     setErrorMessage(`Unexpected error: ${error.message}`);
-    //   }
-    // };
-
     const fetchPaths = async () => {
       try {
         const response = await fetch(
